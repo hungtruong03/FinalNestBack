@@ -18,6 +18,7 @@ async function bootstrap() {
         'Access-Control-Allow-Origin',
       ],
     });
+    
     await app.listen(process.env.PORT ?? 3000);
     console.log(`Server is running on http://localhost:${process.env.PORT ?? 3000}`);
   } catch (error) {
