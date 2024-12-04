@@ -6,10 +6,16 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   try {
     app.enableCors({
-      origin: '*',
-      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      origin: ['https://final-react-front-rho.vercel.app'],
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       credentials: true,
-      allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept, Authentication, Access-control-allow-credentials, Access-control-allow-headers, Access-control-allow-methods, Access-control-allow-origin, User-Agent, Referer, Accept-Encoding, Accept-Language, Access-Control-Request-Headers, Cache-Control, Pragma',
+      allowedHeaders: [
+        'Origin',
+        'X-Requested-With',
+        'Content-Type',
+        'Accept',
+        'Authorization',
+      ],
     });
     await app.listen(process.env.PORT ?? 3000);
     console.log(`Server is running on http://localhost:${process.env.PORT ?? 3000}`);
