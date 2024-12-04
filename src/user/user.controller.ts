@@ -25,8 +25,38 @@ export class UserController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('logingg')
-  async logingg(@Body() body: { token: string }) {
-    return this.userService.loginWithGoogle(body.token);
+  async loginWithGoogle(@Body() body: { token: string }) {
+    const { token } = body;
+
+    // Giải mã token để lấy thông tin email, name, googleId
+    const decodedToken = this.decodeGoogleToken(token);
+
+    if (!decodedToken) {
+      return {
+        status: 'error',
+        message: 'Token không hợp lệ hoặc không giải mã được.',
+      };
+    }
+
+    // Gọi service với thông tin đã giải mã
+    return this.userService.loginWithGoogle(decodedToken);
+  }
+
+  private decodeGoogleToken(token: string): { email: string; name: string; googleId: string } | null {
+    try {
+      // Giải mã token (thay thế logic này bằng thư viện phù hợp nếu cần)
+      const decoded = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+
+      // Trích xuất thông tin cần thiết
+      return {
+        email: decoded.email,
+        name: decoded.name,
+        googleId: decoded.sub, // `sub` thường là Google ID
+      };
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
   }
 
   @Public()

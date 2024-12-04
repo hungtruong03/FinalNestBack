@@ -98,40 +98,45 @@ let UserService = class UserService {
         }
         return data;
     }
-    async loginWithGoogle(idToken) {
-        const ticket = await this.googleClient.verifyIdToken({
-            idToken,
-            audience: process.env.GOOGLE_CLIENT_ID,
-        });
-        const payload = ticket.getPayload();
-        if (!payload) {
-            throw new common_1.UnauthorizedException('Xác thực Google không hợp lệ.');
-        }
-        const { email, sub: googleId } = payload;
-        let user = await this.supabase
-            .from('users')
-            .select('*')
-            .eq('email', email)
-            .single();
-        if (!user.data) {
-            const { error: insertError } = await this.supabase
-                .from('users')
-                .insert([{ email, username: payload.name, googleId }]);
-            if (insertError) {
-                console.error('Error inserting user:', insertError);
-                throw new Error('Đã xảy ra lỗi khi đăng ký người dùng Google.');
-            }
-            user = await this.supabase
-                .from('users')
+    async loginWithGoogle(payload) {
+        const { email, name, googleId } = payload;
+        try {
+            let { data: user, error: fetchError } = await this.supabase
+                .from('usersgg')
                 .select('*')
                 .eq('email', email)
                 .single();
+            if (fetchError || !user) {
+                const { error: insertError } = await this.supabase
+                    .from('usersgg')
+                    .insert([{ email, username: name, googleId }]);
+                if (insertError) {
+                    console.error('Error inserting user:', insertError);
+                    throw new Error('Đã xảy ra lỗi khi đăng ký người dùng Google.');
+                }
+                const { data, error: refetchError } = await this.supabase
+                    .from('usersgg')
+                    .select('*')
+                    .eq('email', email)
+                    .single();
+                if (refetchError || !data) {
+                    throw new Error('Đã xảy ra lỗi khi lấy thông tin người dùng Google sau khi tạo.');
+                }
+                user = data;
+            }
+            return {
+                status: 'success',
+                message: 'Đăng nhập thành công!',
+                user,
+            };
         }
-        const tokens = {
-            accessToken: this.jwtService.sign({ email, sub: user.data.id }, { expiresIn: '15m' }),
-            refreshToken: this.jwtService.sign({ email, sub: user.data.id }, { expiresIn: '7d' }),
-        };
-        return tokens;
+        catch (error) {
+            console.error('Error in loginWithGoogle:', error);
+            return {
+                status: 'error',
+                message: error.message || 'Đã xảy ra lỗi khi xử lý yêu cầu.',
+            };
+        }
     }
 };
 exports.UserService = UserService;

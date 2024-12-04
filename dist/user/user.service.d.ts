@@ -15,8 +15,17 @@ export declare class UserService {
     }>;
     validateUser(userId: number): Promise<any>;
     findOne(userId: number): Promise<any>;
-    loginWithGoogle(idToken: string): Promise<{
-        accessToken: string;
-        refreshToken: string;
+    loginWithGoogle(payload: {
+        email: string;
+        name: string;
+        googleId: string;
+    }): Promise<{
+        status: string;
+        message: string;
+        user: any;
+    } | {
+        status: string;
+        message: any;
+        user?: undefined;
     }>;
 }

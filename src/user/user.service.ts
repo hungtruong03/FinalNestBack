@@ -8,8 +8,8 @@ import { OAuth2Client } from 'google-auth-library';
 export class UserService {
   constructor(
     @Inject('SUPABASE_CLIENT') private readonly supabase: SupabaseClient,
-    private readonly jwtService: JwtService, 
-  ) {}
+    private readonly jwtService: JwtService,
+  ) { }
   private googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
   async register(email: string, password: string, username: string): Promise<string> {
     // Kiểm tra nếu email đã tồn tại trong cơ sở dữ liệu
@@ -107,47 +107,55 @@ export class UserService {
 
     return data;
   }
-  async loginWithGoogle(idToken: string): Promise<{ accessToken: string; refreshToken: string }> {
-    const ticket = await this.googleClient.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
 
-    const payload = ticket.getPayload();
-    if (!payload) {
-      throw new UnauthorizedException('Xác thực Google không hợp lệ.');
-    }
+  async loginWithGoogle(payload: { email: string; name: string; googleId: string }) {
+    const { email, name, googleId } = payload;
 
-    const { email, sub: googleId } = payload;
-
-    let user = await this.supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
-
-    if (!user.data) {
-      const { error: insertError } = await this.supabase
-        .from('users')
-        .insert([{ email, username: payload.name, googleId }]);
-
-      if (insertError) {
-        console.error('Error inserting user:', insertError);
-        throw new Error('Đã xảy ra lỗi khi đăng ký người dùng Google.');
-      }
-
-      user = await this.supabase
-        .from('users')
+    try {
+      // Kiểm tra xem người dùng đã tồn tại chưa
+      let { data: user, error: fetchError } = await this.supabase
+        .from('usersgg')
         .select('*')
         .eq('email', email)
         .single();
+
+      // Nếu có lỗi hoặc không tìm thấy người dùng, tạo mới
+      if (fetchError || !user) {
+        const { error: insertError } = await this.supabase
+          .from('usersgg')
+          .insert([{ email, username: name, googleId }]);
+
+        if (insertError) {
+          console.error('Error inserting user:', insertError);
+          throw new Error('Đã xảy ra lỗi khi đăng ký người dùng Google.');
+        }
+
+        // Lấy lại người dùng sau khi thêm
+        const { data, error: refetchError } = await this.supabase
+          .from('usersgg')
+          .select('*')
+          .eq('email', email)
+          .single();
+
+        if (refetchError || !data) {
+          throw new Error('Đã xảy ra lỗi khi lấy thông tin người dùng Google sau khi tạo.');
+        }
+
+        user = data;
+      }
+
+      // Trả về thông tin người dùng
+      return {
+        status: 'success',
+        message: 'Đăng nhập thành công!',
+        user,
+      };
+    } catch (error) {
+      console.error('Error in loginWithGoogle:', error);
+      return {
+        status: 'error',
+        message: error.message || 'Đã xảy ra lỗi khi xử lý yêu cầu.',
+      };
     }
-
-    const tokens = {
-      accessToken: this.jwtService.sign({ email, sub: user.data.id }, { expiresIn: '15m' }),
-      refreshToken: this.jwtService.sign({ email, sub: user.data.id }, { expiresIn: '7d' }),
-    };
-
-    return tokens;
   }
 }

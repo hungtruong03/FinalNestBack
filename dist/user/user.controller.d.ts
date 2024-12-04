@@ -14,12 +14,18 @@ export declare class UserController {
         accessToken: string;
         refreshToken: string;
     }>;
-    logingg(body: {
+    loginWithGoogle(body: {
         token: string;
     }): Promise<{
-        accessToken: string;
-        refreshToken: string;
+        status: string;
+        message: string;
+        user: any;
+    } | {
+        status: string;
+        message: any;
+        user?: undefined;
     }>;
+    private decodeGoogleToken;
     getProfile(req: any): Promise<{
         email: any;
         name: any;

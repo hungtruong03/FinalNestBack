@@ -28,8 +28,30 @@ let UserController = class UserController {
     async login(body) {
         return this.userService.login(body.email, body.password);
     }
-    async logingg(body) {
-        return this.userService.loginWithGoogle(body.token);
+    async loginWithGoogle(body) {
+        const { token } = body;
+        const decodedToken = this.decodeGoogleToken(token);
+        if (!decodedToken) {
+            return {
+                status: 'error',
+                message: 'Token không hợp lệ hoặc không giải mã được.',
+            };
+        }
+        return this.userService.loginWithGoogle(decodedToken);
+    }
+    decodeGoogleToken(token) {
+        try {
+            const decoded = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+            return {
+                email: decoded.email,
+                name: decoded.name,
+                googleId: decoded.sub,
+            };
+        }
+        catch (error) {
+            console.error('Error decoding token:', error);
+            return null;
+        }
     }
     async getProfile(req) {
         const user = await this.userService.findOne(req.user.userId);
@@ -70,7 +92,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], UserController.prototype, "logingg", null);
+], UserController.prototype, "loginWithGoogle", null);
 __decorate([
     (0, setMetaData_1.Public)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
