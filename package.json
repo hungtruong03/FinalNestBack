@@ -32,7 +32,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "google-auth-library": "^9.15.0",
-    "mssql": "^11.0.1",
+    "mssql": "^6.4.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.0",
