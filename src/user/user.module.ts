@@ -4,13 +4,15 @@ import { UserController } from './user.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import * as Redis from 'ioredis';
 
 @Module({
   imports: [
     JwtModule.register({
-      secret: 'SECRET_KEY', // Thay bằng biến môi trường nếu cần
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1h' },
     }),
+
   ],
   providers: [
     UserService,
@@ -19,9 +21,17 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
       provide: 'SUPABASE_CLIENT',
       useFactory: (): SupabaseClient => {
         return createClient(
-          process.env.SUPABASE_URL, // Đảm bảo có biến môi trường này
-          process.env.SUPABASE_ANON_KEY, // Đảm bảo có biến môi trường này
+          process.env.SUPABASE_URL,
+          process.env.SUPABASE_ANON_KEY,
         );
+      },
+    },
+    {
+      provide: 'REDIS_CLIENT',
+      useFactory: (): Redis => {
+        return new Redis(process.env.REDIS_URL, {
+          tls: { rejectUnauthorized: false },
+        });
       },
     },
   ],

@@ -9,10 +9,18 @@ export class UserController {
 
   @Public()
   @HttpCode(HttpStatus.OK)
+  @Post('requestOTP')
+  async requestOTP(@Body() body: { email: string }) {
+    const { email } = body;
+    return this.userService.requestOTP(email);
+  }
+
+  @Public()
+  @HttpCode(HttpStatus.OK)
   @Post('register')
-  async register(@Body() body: { email: string; password: string; username: string }) {
-    const { email, password, username } = body;
-    return this.userService.register(email, password, username); // Truyền đầy đủ ba tham số
+  async register(@Body() body: { email: string; password: string; username: string, otp: string }) {
+    const { email, password, username, otp } = body;
+    return this.userService.register(email, password, username, otp);
   }
 
   @Public()

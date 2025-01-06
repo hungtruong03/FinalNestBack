@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserService = void 0;
 const common_1 = require("@nestjs/common");
@@ -19,13 +20,77 @@ const common_2 = require("@nestjs/common");
 const bcrypt = require("bcrypt");
 const jwt_1 = require("@nestjs/jwt");
 const google_auth_library_1 = require("google-auth-library");
+const Redis = require("ioredis");
+const nodemailer = require("nodemailer");
 let UserService = class UserService {
-    constructor(supabase, jwtService) {
+    constructor(supabase, jwtService, redisClient) {
         this.supabase = supabase;
         this.jwtService = jwtService;
+        this.redisClient = redisClient;
         this.googleClient = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_CLIENT_ID);
     }
-    async register(email, password, username) {
+    async requestOTP(email) {
+        const { data, error } = await this.supabase
+            .from('users')
+            .select('*')
+            .eq('email', email)
+            .single();
+        if (data) {
+            throw new common_1.ConflictException('Email đã tồn tại.');
+        }
+        const otpKey = `otp:${email}`;
+        const cooldownKey = `otpCooldown:${email}`;
+        const cooldown = await this.redisClient.get(cooldownKey);
+        if (cooldown) {
+            throw new common_1.BadRequestException('Yêu cầu quá nhiều lần vui lòng thử lại sau.');
+        }
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        await this.redisClient.set(otpKey, otp, 'EX', 300);
+        await this.redisClient.set(cooldownKey, '1', 'EX', 30);
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASSKEY,
+            },
+        });
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Movies Recommendation Code',
+            text: `Mã OTP của bạn là: ${otp}. Mã này có hiệu lực trong vòng 5 phút.`,
+        };
+        try {
+            await transporter.sendMail(mailOptions);
+            console.log(`Đã gửi ${otp} đến ${email}`);
+        }
+        catch (error) {
+            console.error('Error sending OTP via email:', error);
+            throw new common_1.BadRequestException('Có lỗi xảy ra khi gửi OTP. Hãy thử lại sau.');
+        }
+        return { success: true };
+    }
+    async verifyOtp(email, otp) {
+        const otpKey = `otp:${email}`;
+        const storedOtp = await this.redisClient.get(otpKey);
+        if (!storedOtp || storedOtp !== otp) {
+            return false;
+        }
+        return true;
+    }
+    async deleteOtp(email, otp) {
+        const otpKey = `otp:${email}`;
+        const storedOtp = await this.redisClient.get(otpKey);
+        if (!storedOtp || storedOtp !== otp) {
+            return;
+        }
+        await this.redisClient.del(otpKey);
+    }
+    async register(email, password, username, otp) {
+        const isOtpValid = await this.verifyOtp(email, otp);
+        if (!isOtpValid) {
+            throw new common_1.BadRequestException('OTP không tồn tại hoặc đã hết hạn.');
+        }
         const { data, error } = await this.supabase
             .from('users')
             .select('*')
@@ -42,6 +107,7 @@ let UserService = class UserService {
             console.error('Error inserting user:', insertError);
             throw new Error('Đã xảy ra lỗi khi đăng ký người dùng.');
         }
+        await this.verifyOtp(email, otp);
         return 'Đăng ký thành công!';
     }
     async login(email, password) {
@@ -143,7 +209,8 @@ exports.UserService = UserService;
 exports.UserService = UserService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_2.Inject)('SUPABASE_CLIENT')),
+    __param(2, (0, common_2.Inject)('REDIS_CLIENT')),
     __metadata("design:paramtypes", [supabase_js_1.SupabaseClient,
-        jwt_1.JwtService])
+        jwt_1.JwtService, typeof (_a = typeof Redis !== "undefined" && Redis) === "function" ? _a : Object])
 ], UserService);
 //# sourceMappingURL=user.service.js.map

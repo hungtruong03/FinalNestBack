@@ -1,11 +1,18 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { JwtService } from '@nestjs/jwt';
+import * as Redis from 'ioredis';
 export declare class UserService {
     private readonly supabase;
     private readonly jwtService;
-    constructor(supabase: SupabaseClient, jwtService: JwtService);
+    private readonly redisClient;
+    constructor(supabase: SupabaseClient, jwtService: JwtService, redisClient: Redis);
     private googleClient;
-    register(email: string, password: string, username: string): Promise<string>;
+    requestOTP(email: string): Promise<{
+        success: boolean;
+    }>;
+    verifyOtp(email: string, otp: string): Promise<boolean>;
+    deleteOtp(email: string, otp: string): Promise<void>;
+    register(email: string, password: string, username: string, otp: string): Promise<string>;
     login(email: string, password: string): Promise<{
         accessToken: string;
         refreshToken: string;

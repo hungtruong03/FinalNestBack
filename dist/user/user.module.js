@@ -13,6 +13,7 @@ const user_controller_1 = require("./user.controller");
 const jwt_1 = require("@nestjs/jwt");
 const jwt_strategy_1 = require("./jwt.strategy");
 const supabase_js_1 = require("@supabase/supabase-js");
+const Redis = require("ioredis");
 let UserModule = class UserModule {
 };
 exports.UserModule = UserModule;
@@ -20,7 +21,7 @@ exports.UserModule = UserModule = __decorate([
     (0, common_1.Module)({
         imports: [
             jwt_1.JwtModule.register({
-                secret: 'SECRET_KEY',
+                secret: process.env.JWT_SECRET,
                 signOptions: { expiresIn: '1h' },
             }),
         ],
@@ -31,6 +32,14 @@ exports.UserModule = UserModule = __decorate([
                 provide: 'SUPABASE_CLIENT',
                 useFactory: () => {
                     return (0, supabase_js_1.createClient)(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+                },
+            },
+            {
+                provide: 'REDIS_CLIENT',
+                useFactory: () => {
+                    return new Redis(process.env.REDIS_URL, {
+                        tls: { rejectUnauthorized: false },
+                    });
                 },
             },
         ],

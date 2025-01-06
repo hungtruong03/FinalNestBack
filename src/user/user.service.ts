@@ -1,17 +1,100 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Inject } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
+import * as Redis from 'ioredis';
+import * as nodemailer from 'nodemailer';
 @Injectable()
 export class UserService {
   constructor(
     @Inject('SUPABASE_CLIENT') private readonly supabase: SupabaseClient,
     private readonly jwtService: JwtService,
+    @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
   ) { }
   private googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-  async register(email: string, password: string, username: string): Promise<string> {
+
+  async requestOTP(email: string): Promise<{ success: boolean }> {
+    // Kiểm tra xem email đã tồn tại chưa
+    const { data, error } = await this.supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (data) {
+      throw new ConflictException('Email đã tồn tại.');
+    }
+
+    const otpKey = `otp:${email}`;
+    const cooldownKey = `otpCooldown:${email}`;
+
+    const cooldown = await this.redisClient.get(cooldownKey);
+    if (cooldown) {
+      throw new BadRequestException('Yêu cầu quá nhiều lần vui lòng thử lại sau.');
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await this.redisClient.set(otpKey, otp, 'EX', 300);
+
+    await this.redisClient.set(cooldownKey, '1', 'EX', 30);
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSKEY,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Movies Recommendation Code',
+      text: `Mã OTP của bạn là: ${otp}. Mã này có hiệu lực trong vòng 5 phút.`,
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log(`Đã gửi ${otp} đến ${email}`);
+    } catch (error) {
+      console.error('Error sending OTP via email:', error);
+      throw new BadRequestException('Có lỗi xảy ra khi gửi OTP. Hãy thử lại sau.');
+    }
+
+    return { success: true };
+  }
+
+  async verifyOtp(email: string, otp: string): Promise<boolean> {
+    const otpKey = `otp:${email}`;
+    const storedOtp = await this.redisClient.get(otpKey);
+
+    if (!storedOtp || storedOtp !== otp) {
+      return false;
+    }
+
+    return true;
+  }
+
+  async deleteOtp(email: string, otp: string): Promise<void> {
+    const otpKey = `otp:${email}`;
+    const storedOtp = await this.redisClient.get(otpKey);
+
+    if (!storedOtp || storedOtp !== otp) {
+      return;
+    }
+
+    await this.redisClient.del(otpKey);
+  }
+
+  async register(email: string, password: string, username: string, otp: string): Promise<string> {
+    const isOtpValid = await this.verifyOtp(email, otp);
+    if (!isOtpValid) {
+      throw new BadRequestException('OTP không tồn tại hoặc đã hết hạn.');
+    }
+
     // Kiểm tra nếu email đã tồn tại trong cơ sở dữ liệu
     const { data, error } = await this.supabase
       .from('users')
@@ -35,6 +118,8 @@ export class UserService {
       console.error('Error inserting user:', insertError); // In ra lỗi chi tiết
       throw new Error('Đã xảy ra lỗi khi đăng ký người dùng.');
     }
+
+    await this.verifyOtp(email, otp);
 
     return 'Đăng ký thành công!';
   }

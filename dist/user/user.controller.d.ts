@@ -2,10 +2,16 @@ import { UserService } from './user.service';
 export declare class UserController {
     private userService;
     constructor(userService: UserService);
+    requestOTP(body: {
+        email: string;
+    }): Promise<{
+        success: boolean;
+    }>;
     register(body: {
         email: string;
         password: string;
         username: string;
+        otp: string;
     }): Promise<string>;
     login(body: {
         email: string;

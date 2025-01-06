@@ -21,9 +21,13 @@ let UserController = class UserController {
     constructor(userService) {
         this.userService = userService;
     }
+    async requestOTP(body) {
+        const { email } = body;
+        return this.userService.requestOTP(email);
+    }
     async register(body) {
-        const { email, password, username } = body;
-        return this.userService.register(email, password, username);
+        const { email, password, username, otp } = body;
+        return this.userService.register(email, password, username, otp);
     }
     async login(body) {
         return this.userService.login(body.email, body.password);
@@ -66,6 +70,15 @@ let UserController = class UserController {
     }
 };
 exports.UserController = UserController;
+__decorate([
+    (0, setMetaData_1.Public)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, common_1.Post)('requestOTP'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "requestOTP", null);
 __decorate([
     (0, setMetaData_1.Public)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
