@@ -1,6 +1,6 @@
 import { UserService } from './user.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { Controller, Post, Body, Get, Request, UseGuards, NotFoundException, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Get, Request, UseGuards, NotFoundException, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { Public } from '../decorators/setMetaData';
 
 @Controller('user')
@@ -17,8 +17,30 @@ export class UserController {
 
   @Public()
   @HttpCode(HttpStatus.OK)
+  @Post('request-password-reset')
+  async requestPasswordReset(@Body('email') email: string) {
+    return this.userService.requestPasswordReset(email);
+  }
+
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Post('verify-reset-code')
+  async verifyResetCode(@Query('key') key: string) {
+    return this.userService.verifyResetCode(key);
+  }
+
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Post('reset-password')
+  async resetPassword(@Body() body: { email: string; newPassword: string; resetCode: string }) {
+    const { email, newPassword, resetCode } = body;
+    return this.userService.resetPassword(resetCode, email, newPassword);
+  }
+
+  @Public()
+  @HttpCode(HttpStatus.OK)
   @Post('register')
-  async register(@Body() body: { email: string; password: string; username: string, otp: string }) {
+  async register(@Body() body: { email: string; password: string; username: string; otp: string }) {
     const { email, password, username, otp } = body;
     return this.userService.register(email, password, username, otp);
   }

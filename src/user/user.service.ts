@@ -6,6 +6,7 @@ import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
 import * as Redis from 'ioredis';
 import * as nodemailer from 'nodemailer';
+import { v4 as uuidv4 } from 'uuid';
 @Injectable()
 export class UserService {
   constructor(
@@ -52,7 +53,7 @@ export class UserService {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: 'Movies Recommendation Code',
+      subject: 'Movies Recommender Code',
       text: `Mã OTP của bạn là: ${otp}. Mã này có hiệu lực trong vòng 5 phút.`,
     };
 
@@ -242,5 +243,82 @@ export class UserService {
         message: error.message || 'Đã xảy ra lỗi khi xử lý yêu cầu.',
       };
     }
+  }
+
+  async requestPasswordReset(email: string): Promise<void> {
+    const resetCode = uuidv4();
+    const resetLink = `https://final-react-front-rho.vercel.app/resetpassword?key=${resetCode}`;
+
+    await this.redisClient.set(`password-reset:${resetCode}`, email, 'EX', 86400);
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSKEY,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Movies Recommender Password Reset',
+      text: `Đường dẫn reset password sau có hiệu lực trong vòng 1 ngày: ${resetLink}`,
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log(`Đã gửi ${resetLink} đến ${email}`);
+    } catch (error) {
+      console.error('Error sending reset link via email:', error);
+      throw new BadRequestException('Có lỗi xảy ra khi gửi Reset Link. Hãy thử lại sau.');
+    }
+  }
+
+  async verifyResetCode(resetCode: string): Promise<string | null> {
+    return await this.redisClient.get(`password-reset:${resetCode}`);
+  }
+
+  async resetPassword(resetCode: string, email: string, newPassword: string): Promise<{ success: boolean }> {
+    const storedEmail = await this.redisClient.get(`password-reset:${resetCode}`);
+
+    if (storedEmail !== email) {
+      throw new BadRequestException('Email không hợp lệ.');
+    }
+
+    const result = await this.updateUserPassword(email, newPassword);
+
+    if (result) {
+      await this.redisClient.del(`password-reset:${resetCode}`);
+      return { success: true };
+    }
+
+    throw new BadRequestException('Có lỗi xảy ra khi cập nhật mật khẩu.');
+  }
+
+  private async updateUserPassword(email: string, newPassword: string): Promise<boolean> {
+    const { data, error } = await this.supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error || !data) {
+      return false;
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    const { error: updateError } = await this.supabase
+      .from('users')
+      .update({ password: hashedPassword })
+      .eq('email', email);
+
+    if (updateError) {
+      return false;
+    }
+
+    return true;
+
   }
 }
