@@ -206,7 +206,7 @@ let UserService = class UserService {
         }
     }
     async requestPasswordReset(email) {
-        const resetCode = (0, uuid_1.v4)().replace(/-/g, '');
+        const resetCode = (0, uuid_1.v4)();
         const resetLink = `https://final-react-front-rho.vercel.app/resetpassword?key=${resetCode}`;
         await this.redisClient.set(`password-reset:${resetCode}`, email, 'EX', 86400);
         const transporter = nodemailer.createTransport({
@@ -241,6 +241,7 @@ let UserService = class UserService {
         if (storedEmail !== email) {
             throw new common_1.BadRequestException('Email không hợp lệ.');
         }
+        console.log("ngon");
         const result = await this.updateUserPassword(email, newPassword);
         if (result) {
             await this.redisClient.del(`password-reset:${resetCode}`);
@@ -260,7 +261,7 @@ let UserService = class UserService {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         const { error: updateError } = await this.supabase
             .from('users')
-            .update({ password: hashedPassword })
+            .update({ pass: hashedPassword })
             .eq('email', email);
         if (updateError) {
             return false;

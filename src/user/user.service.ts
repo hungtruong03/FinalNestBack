@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Inject } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
@@ -7,6 +7,7 @@ import { OAuth2Client } from 'google-auth-library';
 import * as Redis from 'ioredis';
 import * as nodemailer from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
+import { NotFoundError } from 'rxjs';
 @Injectable()
 export class UserService {
   constructor(
@@ -279,7 +280,12 @@ export class UserService {
 
   async verifyResetCode(resetCode: string): Promise<{email: string}> {
     const email = await this.redisClient.get(`password-reset:${resetCode}`);
-    return { email };
+    if (email) {
+      return { email };
+    }
+    else {
+      throw new NotFoundException('Reset code không hợp lệ.');
+    }
   }
 
   async resetPassword(resetCode: string, email: string, newPassword: string): Promise<{ success: boolean }> {
@@ -314,7 +320,7 @@ export class UserService {
 
     const { error: updateError } = await this.supabase
       .from('users')
-      .update({ password: hashedPassword })
+      .update({ pass: hashedPassword })
       .eq('email', email);
 
     if (updateError) {
