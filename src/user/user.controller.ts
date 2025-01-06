@@ -17,21 +17,21 @@ export class UserController {
 
   @Public()
   @HttpCode(HttpStatus.OK)
-  @Post('request-password-reset')
+  @Post('requestPasswordReset')
   async requestPasswordReset(@Body('email') email: string) {
     return this.userService.requestPasswordReset(email);
   }
 
   @Public()
   @HttpCode(HttpStatus.OK)
-  @Post('verify-reset-code')
+  @Post('verifyResetCode')
   async verifyResetCode(@Query('key') key: string) {
     return this.userService.verifyResetCode(key);
   }
 
   @Public()
   @HttpCode(HttpStatus.OK)
-  @Post('reset-password')
+  @Post('resetPassword')
   async resetPassword(@Body() body: { email: string; newPassword: string; resetCode: string }) {
     const { email, newPassword, resetCode } = body;
     return this.userService.resetPassword(resetCode, email, newPassword);

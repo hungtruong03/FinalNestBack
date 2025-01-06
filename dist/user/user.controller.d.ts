@@ -7,6 +7,15 @@ export declare class UserController {
     }): Promise<{
         success: boolean;
     }>;
+    requestPasswordReset(email: string): Promise<void>;
+    verifyResetCode(key: string): Promise<string>;
+    resetPassword(body: {
+        email: string;
+        newPassword: string;
+        resetCode: string;
+    }): Promise<{
+        success: boolean;
+    }>;
     register(body: {
         email: string;
         password: string;

@@ -25,6 +25,16 @@ let UserController = class UserController {
         const { email } = body;
         return this.userService.requestOTP(email);
     }
+    async requestPasswordReset(email) {
+        return this.userService.requestPasswordReset(email);
+    }
+    async verifyResetCode(key) {
+        return this.userService.verifyResetCode(key);
+    }
+    async resetPassword(body) {
+        const { email, newPassword, resetCode } = body;
+        return this.userService.resetPassword(resetCode, email, newPassword);
+    }
     async register(body) {
         const { email, password, username, otp } = body;
         return this.userService.register(email, password, username, otp);
@@ -79,6 +89,33 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "requestOTP", null);
+__decorate([
+    (0, setMetaData_1.Public)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, common_1.Post)('requestPasswordReset'),
+    __param(0, (0, common_1.Body)('email')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "requestPasswordReset", null);
+__decorate([
+    (0, setMetaData_1.Public)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, common_1.Post)('verifyResetCode'),
+    __param(0, (0, common_1.Query)('key')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "verifyResetCode", null);
+__decorate([
+    (0, setMetaData_1.Public)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, common_1.Post)('resetPassword'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "resetPassword", null);
 __decorate([
     (0, setMetaData_1.Public)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),

@@ -35,4 +35,10 @@ export declare class UserService {
         message: any;
         user?: undefined;
     }>;
+    requestPasswordReset(email: string): Promise<void>;
+    verifyResetCode(resetCode: string): Promise<string | null>;
+    resetPassword(resetCode: string, email: string, newPassword: string): Promise<{
+        success: boolean;
+    }>;
+    private updateUserPassword;
 }
