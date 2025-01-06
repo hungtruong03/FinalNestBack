@@ -206,7 +206,7 @@ let UserService = class UserService {
         }
     }
     async requestPasswordReset(email) {
-        const resetCode = (0, uuid_1.v4)();
+        const resetCode = (0, uuid_1.v4)().replace(/-/g, '');
         const resetLink = `https://final-react-front-rho.vercel.app/resetpassword?key=${resetCode}`;
         await this.redisClient.set(`password-reset:${resetCode}`, email, 'EX', 86400);
         const transporter = nodemailer.createTransport({
@@ -233,7 +233,8 @@ let UserService = class UserService {
         return { success: true };
     }
     async verifyResetCode(resetCode) {
-        return await this.redisClient.get(`password-reset:${resetCode}`);
+        const email = await this.redisClient.get(`password-reset:${resetCode}`);
+        return { email };
     }
     async resetPassword(resetCode, email, newPassword) {
         const storedEmail = await this.redisClient.get(`password-reset:${resetCode}`);

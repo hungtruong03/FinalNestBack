@@ -101,7 +101,7 @@ __decorate([
 __decorate([
     (0, setMetaData_1.Public)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    (0, common_1.Post)('verifyResetCode'),
+    (0, common_1.Get)('verifyResetCode'),
     __param(0, (0, common_1.Query)('key')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),

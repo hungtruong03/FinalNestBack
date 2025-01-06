@@ -10,7 +10,9 @@ export declare class UserController {
     requestPasswordReset(email: string): Promise<{
         success: boolean;
     }>;
-    verifyResetCode(key: string): Promise<string>;
+    verifyResetCode(key: string): Promise<{
+        email: string;
+    }>;
     resetPassword(body: {
         email: string;
         newPassword: string;

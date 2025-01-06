@@ -277,8 +277,9 @@ export class UserService {
     return { success: true };
   }
 
-  async verifyResetCode(resetCode: string): Promise<string | null> {
-    return await this.redisClient.get(`password-reset:${resetCode}`);
+  async verifyResetCode(resetCode: string): Promise<{email: string}> {
+    const email = await this.redisClient.get(`password-reset:${resetCode}`);
+    return { email };
   }
 
   async resetPassword(resetCode: string, email: string, newPassword: string): Promise<{ success: boolean }> {
