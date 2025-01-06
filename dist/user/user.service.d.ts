@@ -35,7 +35,9 @@ export declare class UserService {
         message: any;
         user?: undefined;
     }>;
-    requestPasswordReset(email: string): Promise<void>;
+    requestPasswordReset(email: string): Promise<{
+        success: boolean;
+    }>;
     verifyResetCode(resetCode: string): Promise<string | null>;
     resetPassword(resetCode: string, email: string, newPassword: string): Promise<{
         success: boolean;

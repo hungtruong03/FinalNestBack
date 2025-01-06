@@ -24,7 +24,7 @@ export class UserController {
 
   @Public()
   @HttpCode(HttpStatus.OK)
-  @Post('verifyResetCode')
+  @Get('verifyResetCode')
   async verifyResetCode(@Query('key') key: string) {
     return this.userService.verifyResetCode(key);
   }

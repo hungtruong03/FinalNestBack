@@ -230,6 +230,7 @@ let UserService = class UserService {
             console.error('Error sending reset link via email:', error);
             throw new common_1.BadRequestException('Có lỗi xảy ra khi gửi Reset Link. Hãy thử lại sau.');
         }
+        return { success: true };
     }
     async verifyResetCode(resetCode) {
         return await this.redisClient.get(`password-reset:${resetCode}`);

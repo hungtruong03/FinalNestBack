@@ -245,7 +245,7 @@ export class UserService {
     }
   }
 
-  async requestPasswordReset(email: string): Promise<void> {
+  async requestPasswordReset(email: string): Promise<{ success: boolean }> {
     const resetCode = uuidv4();
     const resetLink = `https://final-react-front-rho.vercel.app/resetpassword?key=${resetCode}`;
 
@@ -273,6 +273,8 @@ export class UserService {
       console.error('Error sending reset link via email:', error);
       throw new BadRequestException('Có lỗi xảy ra khi gửi Reset Link. Hãy thử lại sau.');
     }
+
+    return { success: true };
   }
 
   async verifyResetCode(resetCode: string): Promise<string | null> {
