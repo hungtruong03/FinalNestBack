@@ -3,10 +3,25 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
 import { createClient } from '@supabase/supabase-js';
+import { MongooseModule } from '@nestjs/mongoose';
+import { MovieModule } from './movie/movie.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      envFilePath: '.env',
+      isGlobal: true,
+    }),
     UserModule,
+    // Kết nối MongoDB
+    MongooseModule.forRoot(process.env.MONGO_URI_MOVIE_2, {
+      connectionName: 'movie2Connection',
+    }),
+    MongooseModule.forRoot(process.env.MONGO_URI_MOVIE_1, {
+      connectionName: 'movie1Connection',
+    }),
+    MovieModule,
   ],
   controllers: [AppController],
   providers: [
@@ -14,8 +29,8 @@ import { createClient } from '@supabase/supabase-js';
     {
       provide: 'SUPABASE_CLIENT',
       useFactory: () => {
-        const supabaseUrl = process.env.SUPABASE_URL || 'https://ryswjkikhmyotstyscxm.supabase.co';
-        const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5c3dqa2lraG15b3RzdHlzY3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMyMTYzNTYsImV4cCI6MjA0ODc5MjM1Nn0.ynpt_RllNm3EuWZVIAwOrRqNq0pvamkgLNdL6QTlW5o';
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_ANON_KEY;
         return createClient(supabaseUrl, supabaseKey);
       },
     },

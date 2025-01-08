@@ -12,6 +12,9 @@ const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const user_module_1 = require("./user/user.module");
 const supabase_js_1 = require("@supabase/supabase-js");
+const mongoose_1 = require("@nestjs/mongoose");
+const movie_module_1 = require("./movie/movie.module");
+const config_1 = require("@nestjs/config");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer.apply((req, res, next) => {
@@ -31,7 +34,18 @@ exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            config_1.ConfigModule.forRoot({
+                envFilePath: '.env',
+                isGlobal: true,
+            }),
             user_module_1.UserModule,
+            mongoose_1.MongooseModule.forRoot(process.env.MONGO_URI_MOVIE_2, {
+                connectionName: 'movie2Connection',
+            }),
+            mongoose_1.MongooseModule.forRoot(process.env.MONGO_URI_MOVIE_1, {
+                connectionName: 'movie1Connection',
+            }),
+            movie_module_1.MovieModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [
@@ -39,8 +53,8 @@ exports.AppModule = AppModule = __decorate([
             {
                 provide: 'SUPABASE_CLIENT',
                 useFactory: () => {
-                    const supabaseUrl = process.env.SUPABASE_URL || 'https://ryswjkikhmyotstyscxm.supabase.co';
-                    const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5c3dqa2lraG15b3RzdHlzY3htIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMyMTYzNTYsImV4cCI6MjA0ODc5MjM1Nn0.ynpt_RllNm3EuWZVIAwOrRqNq0pvamkgLNdL6QTlW5o';
+                    const supabaseUrl = process.env.SUPABASE_URL;
+                    const supabaseKey = process.env.SUPABASE_ANON_KEY;
                     return (0, supabase_js_1.createClient)(supabaseUrl, supabaseKey);
                 },
             },

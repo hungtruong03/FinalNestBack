@@ -234,14 +234,18 @@ let UserService = class UserService {
     }
     async verifyResetCode(resetCode) {
         const email = await this.redisClient.get(`password-reset:${resetCode}`);
-        return { email };
+        if (email) {
+            return { email };
+        }
+        else {
+            throw new common_1.NotFoundException('Reset code không hợp lệ.');
+        }
     }
     async resetPassword(resetCode, email, newPassword) {
         const storedEmail = await this.redisClient.get(`password-reset:${resetCode}`);
         if (storedEmail !== email) {
             throw new common_1.BadRequestException('Email không hợp lệ.');
         }
-        console.log("ngon");
         const result = await this.updateUserPassword(email, newPassword);
         if (result) {
             await this.redisClient.del(`password-reset:${resetCode}`);
