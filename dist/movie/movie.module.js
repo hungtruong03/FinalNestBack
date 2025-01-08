@@ -23,6 +23,7 @@ exports.MovieModule = MovieModule = __decorate([
         ],
         providers: [movie_service_1.MovieService],
         controllers: [movie_controller_1.MovieController],
+        exports: [movie_service_1.MovieService],
     })
 ], MovieModule);
 //# sourceMappingURL=movie.module.js.map

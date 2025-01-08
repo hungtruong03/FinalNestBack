@@ -15,6 +15,7 @@ const supabase_js_1 = require("@supabase/supabase-js");
 const mongoose_1 = require("@nestjs/mongoose");
 const movie_module_1 = require("./movie/movie.module");
 const config_1 = require("@nestjs/config");
+const homeapi_module_1 = require("./homeapi/homeapi.module");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer.apply((req, res, next) => {
@@ -45,7 +46,11 @@ exports.AppModule = AppModule = __decorate([
             mongoose_1.MongooseModule.forRoot(process.env.MONGO_URI_MOVIE_1, {
                 connectionName: 'movie1Connection',
             }),
+            mongoose_1.MongooseModule.forRoot(process.env.MONGODB_HOMEAPI, {
+                connectionName: 'HomeAPIConnection',
+            }),
             movie_module_1.MovieModule,
+            homeapi_module_1.HomeapiModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

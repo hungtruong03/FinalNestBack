@@ -50,6 +50,20 @@ let MovieService = class MovieService {
         }
         throw new common_1.NotFoundException('Movie not found in either database');
     }
+    async getTrailers(tmdb_id) {
+        const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id }).exec();
+        const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
+        let movie = null;
+        if (movieFromDb1) {
+            movie = movieFromDb1;
+        }
+        else {
+            movie = movieFromDb2;
+        }
+        if (!movie)
+            throw new common_1.NotFoundException('Movie not found.');
+        return movie.trailers;
+    }
 };
 exports.MovieService = MovieService;
 exports.MovieService = MovieService = __decorate([

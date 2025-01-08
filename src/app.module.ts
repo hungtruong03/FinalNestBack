@@ -6,6 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MovieModule } from './movie/movie.module';
 import { ConfigModule } from '@nestjs/config';
+import { HomeapiModule } from './homeapi/homeapi.module';
 
 @Module({
   imports: [
@@ -21,7 +22,11 @@ import { ConfigModule } from '@nestjs/config';
     MongooseModule.forRoot(process.env.MONGO_URI_MOVIE_1, {
       connectionName: 'movie1Connection',
     }),
+    MongooseModule.forRoot(process.env.MONGODB_HOMEAPI, {
+      connectionName: 'HomeAPIConnection',
+    }),
     MovieModule,
+    HomeapiModule,
   ],
   controllers: [AppController],
   providers: [

@@ -6,4 +6,5 @@ export declare class MovieService {
     constructor(movieModel1: Model<Movie>, movieModel2: Model<Movie>);
     getMovieById(tmdb_id: number): Promise<Movie>;
     getMovieCredits(tmdb_id: number): Promise<any>;
+    getTrailers(tmdb_id: number): Promise<any>;
 }

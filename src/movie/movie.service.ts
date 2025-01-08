@@ -5,13 +5,13 @@ import { Movie } from './movie.schema';
 
 @Injectable()
 export class MovieService {
-    constructor(
-        @InjectModel(Movie.name, 'movie1Connection')
-        private readonly movieModel1: Model<Movie>, // Model kết nối đến movie1
-    
-        @InjectModel(Movie.name, 'movie2Connection')
-        private readonly movieModel2: Model<Movie>, // Model kết nối đến movie2
-      ) {}
+  constructor(
+    @InjectModel(Movie.name, 'movie1Connection')
+    private readonly movieModel1: Model<Movie>, // Model kết nối đến movie1
+
+    @InjectModel(Movie.name, 'movie2Connection')
+    private readonly movieModel2: Model<Movie>, // Model kết nối đến movie2
+  ) { }
 
   /**
    * Lấy thông tin chi tiết phim theo `tmdb_id`.
@@ -55,5 +55,21 @@ export class MovieService {
     }
 
     throw new NotFoundException('Movie not found in either database');
+  }
+
+  async getTrailers(tmdb_id: number): Promise<any> {
+    const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id }).exec();
+    const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
+    let movie = null;
+
+    if (movieFromDb1) {
+      movie = movieFromDb1;
+    } else {
+      movie = movieFromDb2;
+    }
+
+    if (!movie) throw new NotFoundException('Movie not found.');
+
+    return movie.trailers;
   }
 }
