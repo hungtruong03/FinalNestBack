@@ -64,6 +64,48 @@ let MovieService = class MovieService {
             throw new common_1.NotFoundException('Movie not found.');
         return movie.trailers;
     }
+    async searchMovies(filters) {
+        const { minVoteAverage, minVoteCount, releaseDateFrom, releaseDateTo, genres, sortBy = 'vote_average', sortOrder = 'desc', limit = 10, page = 1, } = filters;
+        const query = {};
+        if (minVoteAverage !== undefined) {
+            query.vote_average = { $gte: minVoteAverage };
+        }
+        if (minVoteCount !== undefined) {
+            query.vote_count = { $gte: minVoteCount };
+        }
+        if (releaseDateFrom || releaseDateTo) {
+            query.release_date = {};
+            if (releaseDateFrom)
+                query.release_date.$gte = releaseDateFrom;
+            if (releaseDateTo)
+                query.release_date.$lte = releaseDateTo;
+        }
+        if (genres && genres.length > 0) {
+            query.genres = { $elemMatch: { name: { $in: genres } } };
+        }
+        const skip = (page - 1) * limit;
+        const [moviesFromDb1, countDb1] = await Promise.all([
+            this.movieModel1
+                .find(query)
+                .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
+                .skip(skip)
+                .limit(limit)
+                .exec(),
+            this.movieModel1.countDocuments(query).exec(),
+        ]);
+        const [moviesFromDb2, countDb2] = await Promise.all([
+            this.movieModel2
+                .find(query)
+                .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
+                .skip(skip)
+                .limit(limit)
+                .exec(),
+            this.movieModel2.countDocuments(query).exec(),
+        ]);
+        const combinedMovies = [...moviesFromDb1, ...moviesFromDb2];
+        const total = countDb1 + countDb2;
+        return { movies: combinedMovies, total };
+    }
 };
 exports.MovieService = MovieService;
 exports.MovieService = MovieService = __decorate([

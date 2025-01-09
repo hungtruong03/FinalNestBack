@@ -104,4 +104,12 @@ export class UserController {
       birthday: user.birthday,
     };
   }
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.CREATED)
+  @Post('rate')
+  async addRating(@Request() req, @Body() body: { movieId: number; rating: number }) {
+    const userId = req.user.userId;
+    const { movieId, rating } = body;
+    return this.userService.addRating(userId, movieId, rating);
+  }
 }

@@ -28,6 +28,20 @@ let MovieController = class MovieController {
         const tmdb_id = parseInt(id, 10);
         return this.movieService.getMovieCredits(tmdb_id);
     }
+    async searchMovies(query) {
+        const filters = {
+            minVoteAverage: query.minVoteAverage ? parseFloat(query.minVoteAverage) : undefined,
+            minVoteCount: query.minVoteCount ? parseInt(query.minVoteCount, 10) : undefined,
+            releaseDateFrom: query.releaseDateFrom,
+            releaseDateTo: query.releaseDateTo,
+            genres: query.genres ? query.genres.split(',') : undefined,
+            sortBy: query.sortBy,
+            sortOrder: query.sortOrder,
+            limit: query.limit ? parseInt(query.limit, 10) : undefined,
+            page: query.page ? parseInt(query.page, 10) : undefined,
+        };
+        return this.movieService.searchMovies(filters);
+    }
 };
 exports.MovieController = MovieController;
 __decorate([
@@ -44,6 +58,13 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], MovieController.prototype, "getMovieCredits", null);
+__decorate([
+    (0, common_1.Get)('search'),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], MovieController.prototype, "searchMovies", null);
 exports.MovieController = MovieController = __decorate([
     (0, common_1.Controller)('movies'),
     __metadata("design:paramtypes", [movie_service_1.MovieService])

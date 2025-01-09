@@ -72,4 +72,81 @@ export class MovieService {
 
     return movie.trailers;
   }
+  async searchMovies(filters: {
+    minVoteAverage?: number;
+    minVoteCount?: number;
+    releaseDateFrom?: string;
+    releaseDateTo?: string;
+    genres?: string[];
+    sortBy?: 'vote_average' | 'release_date';
+    sortOrder?: 'asc' | 'desc';
+    limit?: number;
+    page?: number;
+  }): Promise<{ movies: Movie[]; total: number; }> {
+    const {
+      minVoteAverage,
+      minVoteCount,
+      releaseDateFrom,
+      releaseDateTo,
+      genres,
+      sortBy = 'vote_average',
+      sortOrder = 'desc',
+      limit = 10,
+      page = 1,
+    } = filters;
+
+    const query: any = {};
+
+    // Filter by vote_average
+    if (minVoteAverage !== undefined) {
+      query.vote_average = { $gte: minVoteAverage };
+    }
+
+    // Filter by vote_count
+    if (minVoteCount !== undefined) {
+      query.vote_count = { $gte: minVoteCount };
+    }
+
+    // Filter by release_date
+    if (releaseDateFrom || releaseDateTo) {
+      query.release_date = {};
+      if (releaseDateFrom) query.release_date.$gte = releaseDateFrom;
+      if (releaseDateTo) query.release_date.$lte = releaseDateTo;
+    }
+
+    // Filter by genres
+    if (genres && genres.length > 0) {
+      query.genres = { $elemMatch: { name: { $in: genres } } };
+    }
+
+    // Calculate skip and limit for pagination
+    const skip = (page - 1) * limit;
+
+    // Perform the query on both databases
+    const [moviesFromDb1, countDb1] = await Promise.all([
+      this.movieModel1
+        .find(query)
+        .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.movieModel1.countDocuments(query).exec(),
+    ]);
+
+    const [moviesFromDb2, countDb2] = await Promise.all([
+      this.movieModel2
+        .find(query)
+        .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.movieModel2.countDocuments(query).exec(),
+    ]);
+
+    // Merge and return results
+    const combinedMovies = [...moviesFromDb1, ...moviesFromDb2];
+    const total = countDb1 + countDb2;
+
+    return { movies: combinedMovies, total };
+  }
 }

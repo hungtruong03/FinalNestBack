@@ -330,4 +330,44 @@ export class UserService {
     return true;
 
   }
+  async addRating(userId: number, movieId: number, rating: number): Promise<{ success: boolean }> {
+    // Kiểm tra rating hợp lệ (phải từ 1 đến 10)
+    if (rating < 1 || rating > 10) {
+      throw new BadRequestException('Điểm đánh giá phải từ 1 đến 10.');
+    }
+
+    // Kiểm tra xem người dùng đã đánh giá phim này chưa
+    const { data, error } = await this.supabase
+      .from('ratings')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('movie_id', movieId)
+      .single();
+
+    if (data) {
+      // Nếu đã có đánh giá, có thể update lại điểm
+      const { error: updateError } = await this.supabase
+        .from('ratings')
+        .update({ rating, date: new Date() })
+        .eq('user_id', userId)
+        .eq('movie_id', movieId);
+
+      if (updateError) {
+        throw new BadRequestException('Không thể cập nhật điểm đánh giá.');
+      }
+
+      return { success: true };
+    } else {
+      // Nếu chưa có đánh giá, thực hiện insert
+      const { error: insertError } = await this.supabase
+        .from('ratings')
+        .insert([{ user_id: userId, movie_id: movieId, rating, date: new Date() }]);
+
+      if (insertError) {
+        throw new BadRequestException('Không thể thêm điểm đánh giá.');
+      }
+
+      return { success: true };
+    }
+  }
 }
