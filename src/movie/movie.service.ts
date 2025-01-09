@@ -146,7 +146,7 @@ export class MovieService {
     // Merge and return results
     const combinedMovies = [...moviesFromDb1, ...moviesFromDb2];
     const total = countDb1 + countDb2;
-
+    console.log('duoc ở BES')
     return { movies: combinedMovies, total };
   }
 }

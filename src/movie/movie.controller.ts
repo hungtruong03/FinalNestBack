@@ -23,8 +23,8 @@ export class MovieController {
     }
     @Get('search')
     async searchMovies(@Query() query: {
-        minVoteAverage?: string;
-        minVoteCount?: string;
+        minVoteAverage?: number;
+        minVoteCount?: number;
         releaseDateFrom?: string;
         releaseDateTo?: string;
         genres?: string;
@@ -34,8 +34,8 @@ export class MovieController {
         page?: string;
     }) {
         const filters = {
-            minVoteAverage: query.minVoteAverage ? parseFloat(query.minVoteAverage) : undefined,
-            minVoteCount: query.minVoteCount ? parseInt(query.minVoteCount, 10) : undefined,
+            minVoteAverage: query.minVoteAverage ,
+            minVoteCount: query.minVoteCount ,
             releaseDateFrom: query.releaseDateFrom,
             releaseDateTo: query.releaseDateTo,
             genres: query.genres ? query.genres.split(',') : undefined,
@@ -44,7 +44,7 @@ export class MovieController {
             limit: query.limit ? parseInt(query.limit, 10) : undefined,
             page: query.page ? parseInt(query.page, 10) : undefined,
         };
-
+        console.log('controller search')
         return this.movieService.searchMovies(filters);
     }
 
