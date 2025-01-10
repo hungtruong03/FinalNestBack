@@ -33,7 +33,6 @@ exports.UserModule = UserModule = __decorate([
                 signOptions: { expiresIn: '1h' },
             }),
             mongoose_1.MongooseModule.forFeature([{ name: movie_schema_1.Movie.name, schema: movie_schema_1.MovieSchema }], 'movie1Connection'),
-            mongoose_1.MongooseModule.forFeature([{ name: movie_schema_1.Movie.name, schema: movie_schema_1.MovieSchema }], 'movie2Connection'),
         ],
         providers: [
             user_service_1.UserService,

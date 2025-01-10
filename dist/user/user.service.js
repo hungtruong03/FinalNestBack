@@ -27,12 +27,11 @@ const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const movie_schema_1 = require("../movie/movie.schema");
 let UserService = class UserService {
-    constructor(supabase, jwtService, redisClient, movieModel1, movieModel2) {
+    constructor(supabase, jwtService, redisClient, movieModel1) {
         this.supabase = supabase;
         this.jwtService = jwtService;
         this.redisClient = redisClient;
         this.movieModel1 = movieModel1;
-        this.movieModel2 = movieModel2;
         this.googleClient = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_CLIENT_ID);
     }
     async requestOTP(email) {
@@ -324,7 +323,8 @@ let UserService = class UserService {
                 .eq('movieID', movieID)
                 .single();
             if (data) {
-                throw new common_1.ConflictException('Phim đã có trong danh sách theo dõi.');
+                console.log("Phim đã có trong danh sách theo dõi");
+                return { success: false };
             }
             console.log(email, movieID);
             const { error: insertError } = await this.supabase
@@ -341,7 +341,7 @@ let UserService = class UserService {
             throw error;
         }
     }
-    async getWatchList(email) {
+    async getWatchList(email, page) {
         try {
             const { data: watchList, error } = await this.supabase
                 .from('watchlist')
@@ -354,18 +354,18 @@ let UserService = class UserService {
             if (!watchList || watchList.length === 0) {
                 throw new common_1.NotFoundException('Danh sách xem trống.');
             }
-            const moviePromises = watchList.map(async (item) => {
+            const skip = (page - 1) * 12;
+            const totalPages = Math.ceil(watchList.length / 12);
+            const paginatedWatchList = watchList.slice(skip, skip + 12);
+            const moviePromises = paginatedWatchList.map(async (item) => {
                 const movieId = item.movieID;
                 const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).exec();
                 if (movieFromDb1)
                     return movieFromDb1;
-                const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id: movieId }).exec();
-                if (movieFromDb2)
-                    return movieFromDb2;
                 throw new common_1.NotFoundException(`Không tìm thấy phim với ID: ${movieId}`);
             });
             const movies = await Promise.all(moviePromises);
-            return movies;
+            return { movies, totalPages };
         }
         catch (error) {
             console.error('Error in getWatchList:', error.message || error);
@@ -397,9 +397,7 @@ exports.UserService = UserService = __decorate([
     __param(0, (0, common_2.Inject)('SUPABASE_CLIENT')),
     __param(2, (0, common_2.Inject)('REDIS_CLIENT')),
     __param(3, (0, mongoose_1.InjectModel)(movie_schema_1.Movie.name, 'movie1Connection')),
-    __param(4, (0, mongoose_1.InjectModel)(movie_schema_1.Movie.name, 'movie2Connection')),
     __metadata("design:paramtypes", [supabase_js_1.SupabaseClient,
-        jwt_1.JwtService, typeof (_a = typeof Redis !== "undefined" && Redis) === "function" ? _a : Object, mongoose_2.Model,
-        mongoose_2.Model])
+        jwt_1.JwtService, typeof (_a = typeof Redis !== "undefined" && Redis) === "function" ? _a : Object, mongoose_2.Model])
 ], UserService);
 //# sourceMappingURL=user.service.js.map

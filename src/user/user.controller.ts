@@ -1,6 +1,6 @@
 import { UserService } from './user.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { Controller, Post, Body, Get, Request, UseGuards, NotFoundException, HttpCode, HttpStatus, Query, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Request, UseGuards, NotFoundException, HttpCode, HttpStatus, Query, Param, Delete } from '@nestjs/common';
 import { Public } from '../decorators/setMetaData';
 
 @Controller('user')
@@ -106,22 +106,59 @@ export class UserController {
   }
   @HttpCode(HttpStatus.CREATED)
   @Post('rate/:movieId')
-  async addRating(@Request() req, @Body() body: { rating: number },@Param('movieId') movieId:number) {
+  async addRating(@Request() req, @Body() body: { rating: number }, @Param('movieId') movieId: number) {
     const userId = req.email;
-    const {  rating } = body;
+    const { rating } = body;
     return this.userService.addRating(userId, movieId, rating);
   }
   @HttpCode(HttpStatus.CREATED)
   @Post('watchlist/:movieId')
-  async addWatchList(@Request() req,@Param('movieId') movieId:number) {
+  async addWatchList(@Request() req, @Param('movieId') movieId: number) {
     const email = req.email;
     console.log(email);
     return this.userService.addToWatchlist(email, movieId);
   }
 
   @Get('watchlist')
-  async getWatchList(@Request() req) {
+  async getWatchList(@Request() req, @Query('page') page: string,) {
     const email = req.email;
-    return this.userService.getWatchList(email);
+    const pageNumber = parseInt(page, 10) || 1;
+    return this.userService.getWatchList(email, pageNumber);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Delete('watchlist/:movieId')
+  async deleteFromWatchlist(@Request() req, @Param('movieId') movieId: number) {
+    const email = req.email;
+    const result = await this.userService.deleteFromWatchlist(email, movieId);
+    return {
+      message: 'Phim đã được xóa khỏi danh sách xem.',
+      success: result.success,
+    };
+  }
+
+
+  @HttpCode(HttpStatus.CREATED)
+  @Post('favourite/:movieId')
+  async addFavourite(@Request() req, @Param('movieId') movieId: number) {
+    const email = req.email;
+    console.log(email);
+    return this.userService.addFavourite(email, movieId);
+  }
+
+  @Get('favourite')
+  async getFavourite(@Request() req, @Query('page') page: string,) {
+    const email = req.email;
+    const pageNumber = parseInt(page, 10) || 1;
+    return this.userService.getFavourite(email, pageNumber);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Delete('favourite/:movieId')
+  async deleteFavourite(@Request() req, @Param('movieId') movieId: number) {
+    const email = req.email;
+    const result = await this.userService.deleteFavourite(email, movieId);
+    return {
+      message: 'Phim đã được xóa khỏi danh sách yêu thích .',
+      success: result.success,
+    };
   }
 }

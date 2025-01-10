@@ -88,9 +88,18 @@ let UserController = class UserController {
         console.log(email);
         return this.userService.addToWatchlist(email, movieId);
     }
-    async getWatchList(req) {
+    async getWatchList(req, page) {
         const email = req.email;
-        return this.userService.getWatchList(email);
+        const pageNumber = parseInt(page, 10) || 1;
+        return this.userService.getWatchList(email, pageNumber);
+    }
+    async deleteFromWatchlist(req, movieId) {
+        const email = req.email;
+        const result = await this.userService.deleteFromWatchlist(email, movieId);
+        return {
+            message: 'Phim đã được xóa khỏi danh sách xem.',
+            success: result.success,
+        };
     }
 };
 exports.UserController = UserController;
@@ -189,10 +198,20 @@ __decorate([
 __decorate([
     (0, common_1.Get)('watchlist'),
     __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('page')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "getWatchList", null);
+__decorate([
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, common_1.Delete)('watchlist/:movieId'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('movieId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Number]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "deleteFromWatchlist", null);
 exports.UserController = UserController = __decorate([
     (0, common_1.Controller)('user'),
     __metadata("design:paramtypes", [user_service_1.UserService])

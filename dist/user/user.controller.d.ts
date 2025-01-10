@@ -60,5 +60,12 @@ export declare class UserController {
     addWatchList(req: any, movieId: number): Promise<{
         success: boolean;
     }>;
-    getWatchList(req: any): Promise<import("../movie/movie.schema").Movie[]>;
+    getWatchList(req: any, page: string): Promise<{
+        movies: import("../movie/movie.schema").Movie[];
+        totalPages: number;
+    }>;
+    deleteFromWatchlist(req: any, movieId: number): Promise<{
+        message: string;
+        success: boolean;
+    }>;
 }

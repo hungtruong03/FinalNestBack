@@ -18,11 +18,7 @@ import { Movie, MovieSchema } from '../movie/movie.schema';
       [{ name: Movie.name, schema: MovieSchema }],
       'movie1Connection',
     ),
-    // Kết nối với database `movie2`
-    MongooseModule.forFeature(
-      [{ name: Movie.name, schema: MovieSchema }],
-      'movie2Connection',
-    ),
+    
 
   ],
   providers: [
@@ -54,7 +50,7 @@ export class UserModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(JwtMiddleware)
-      .forRoutes('user/rate/:movieId','user/watchlist');
+      .forRoutes('user/rate/:movieId','user/watchlist','user/favourite');
   }
 }
 

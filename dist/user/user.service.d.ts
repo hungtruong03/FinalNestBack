@@ -8,8 +8,7 @@ export declare class UserService {
     private readonly jwtService;
     private readonly redisClient;
     private readonly movieModel1;
-    private readonly movieModel2;
-    constructor(supabase: SupabaseClient, jwtService: JwtService, redisClient: Redis, movieModel1: Model<Movie>, movieModel2: Model<Movie>);
+    constructor(supabase: SupabaseClient, jwtService: JwtService, redisClient: Redis, movieModel1: Model<Movie>);
     private googleClient;
     requestOTP(email: string): Promise<{
         success: boolean;
@@ -57,7 +56,10 @@ export declare class UserService {
     addToWatchlist(email: string, movieID: number): Promise<{
         success: boolean;
     }>;
-    getWatchList(email: string): Promise<Movie[]>;
+    getWatchList(email: string, page: number): Promise<{
+        movies: Movie[];
+        totalPages: number;
+    }>;
     deleteFromWatchlist(email: string, movieID: number): Promise<{
         success: boolean;
     }>;
