@@ -83,6 +83,15 @@ let UserController = class UserController {
         const { rating } = body;
         return this.userService.addRating(userId, movieId, rating);
     }
+    async addWatchList(req, movieId) {
+        const email = req.email;
+        console.log(email);
+        return this.userService.addToWatchlist(email, movieId);
+    }
+    async getWatchList(req) {
+        const email = req.email;
+        return this.userService.getWatchList(email);
+    }
 };
 exports.UserController = UserController;
 __decorate([
@@ -160,7 +169,7 @@ __decorate([
 ], UserController.prototype, "getProfile", null);
 __decorate([
     (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
-    (0, common_1.Post)(':movieId/rate'),
+    (0, common_1.Post)('rate/:movieId'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Param)('movieId')),
@@ -168,6 +177,22 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object, Number]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "addRating", null);
+__decorate([
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    (0, common_1.Post)('watchlist/:movieId'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('movieId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Number]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "addWatchList", null);
+__decorate([
+    (0, common_1.Get)('watchlist'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "getWatchList", null);
 exports.UserController = UserController = __decorate([
     (0, common_1.Controller)('user'),
     __metadata("design:paramtypes", [user_service_1.UserService])

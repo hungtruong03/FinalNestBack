@@ -6,13 +6,23 @@ import { JwtStrategy } from './jwt.strategy';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import * as Redis from 'ioredis';
 import { JwtMiddleware } from './jwt.middleware';
-
+import { MongooseModule } from '@nestjs/mongoose';
+import { Movie, MovieSchema } from '../movie/movie.schema';
 @Module({
   imports: [
     JwtModule.register({
       secret: process.env.JWT_SECRET||'SECRET_KEY',
       signOptions: { expiresIn: '1h' },
     }),
+    MongooseModule.forFeature(
+      [{ name: Movie.name, schema: MovieSchema }],
+      'movie1Connection',
+    ),
+    // Kết nối với database `movie2`
+    MongooseModule.forFeature(
+      [{ name: Movie.name, schema: MovieSchema }],
+      'movie2Connection',
+    ),
 
   ],
   providers: [
@@ -44,7 +54,7 @@ export class UserModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(JwtMiddleware)
-      .forRoutes('user/:movieId/rate');
+      .forRoutes('user/rate/:movieId','user/watchlist');
   }
 }
 

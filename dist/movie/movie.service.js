@@ -95,15 +95,30 @@ let MovieService = class MovieService {
                 .limit(limit)
                 .exec();
             const countDb1 = await this.movieModel1.countDocuments(query).exec();
-            const moviesFromDb2 = await this.movieModel2
-                .find(query)
-                .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
-                .skip(skip)
-                .limit(limit)
-                .exec();
+            let moviesFromDb2 = [];
+            if (skip + limit > countDb1) {
+                if (skip > countDb1) {
+                    const skip2 = skip - countDb1;
+                    moviesFromDb2 = await this.movieModel2
+                        .find(query)
+                        .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
+                        .skip(skip2)
+                        .limit(limit)
+                        .exec();
+                }
+                else {
+                    const skip2 = (skip + limit) - countDb1;
+                    moviesFromDb2 = await this.movieModel2
+                        .find(query)
+                        .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
+                        .skip(0)
+                        .limit(skip2)
+                        .exec();
+                }
+            }
             const countDb2 = await this.movieModel2.countDocuments(query).exec();
             const combinedMovies = [...moviesFromDb1, ...moviesFromDb2];
-            const total = countDb1 + countDb2;
+            const total = Math.ceil((countDb1 + countDb2) / limit);
             console.log('duoc ở BES');
             return { movies: combinedMovies, total };
         }

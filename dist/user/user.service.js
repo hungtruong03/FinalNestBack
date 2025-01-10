@@ -23,11 +23,16 @@ const google_auth_library_1 = require("google-auth-library");
 const Redis = require("ioredis");
 const nodemailer = require("nodemailer");
 const uuid_1 = require("uuid");
+const mongoose_1 = require("@nestjs/mongoose");
+const mongoose_2 = require("mongoose");
+const movie_schema_1 = require("../movie/movie.schema");
 let UserService = class UserService {
-    constructor(supabase, jwtService, redisClient) {
+    constructor(supabase, jwtService, redisClient, movieModel1, movieModel2) {
         this.supabase = supabase;
         this.jwtService = jwtService;
         this.redisClient = redisClient;
+        this.movieModel1 = movieModel1;
+        this.movieModel2 = movieModel2;
         this.googleClient = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_CLIENT_ID);
     }
     async requestOTP(email) {
@@ -310,13 +315,91 @@ let UserService = class UserService {
             console.log(error);
         }
     }
+    async addToWatchlist(email, movieID) {
+        try {
+            const { data, error } = await this.supabase
+                .from('watchlist')
+                .select('*')
+                .eq('email', email)
+                .eq('movieID', movieID)
+                .single();
+            if (data) {
+                throw new common_1.ConflictException('Phim đã có trong danh sách theo dõi.');
+            }
+            console.log(email, movieID);
+            const { error: insertError } = await this.supabase
+                .from('watchlist')
+                .insert([{ email: email, movieID: movieID }]);
+            if (insertError) {
+                console.error('Error adding to watchlist:', insertError);
+                throw new Error('Đã xảy ra lỗi khi thêm vào danh sách theo dõi.');
+            }
+            return { success: true };
+        }
+        catch (error) {
+            console.error('Error in addToWatchlist:', error);
+            throw error;
+        }
+    }
+    async getWatchList(email) {
+        try {
+            const { data: watchList, error } = await this.supabase
+                .from('watchlist')
+                .select('movieID')
+                .eq('email', email);
+            if (error) {
+                console.error('Error fetching watch list from Supabase:', error);
+                throw new common_1.NotFoundException('Không tìm thấy danh sách xem.');
+            }
+            if (!watchList || watchList.length === 0) {
+                throw new common_1.NotFoundException('Danh sách xem trống.');
+            }
+            const moviePromises = watchList.map(async (item) => {
+                const movieId = item.movieID;
+                const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).exec();
+                if (movieFromDb1)
+                    return movieFromDb1;
+                const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id: movieId }).exec();
+                if (movieFromDb2)
+                    return movieFromDb2;
+                throw new common_1.NotFoundException(`Không tìm thấy phim với ID: ${movieId}`);
+            });
+            const movies = await Promise.all(moviePromises);
+            return movies;
+        }
+        catch (error) {
+            console.error('Error in getWatchList:', error.message || error);
+            throw new common_1.NotFoundException('Có lỗi xảy ra khi lấy danh sách xem.');
+        }
+    }
+    async deleteFromWatchlist(email, movieID) {
+        try {
+            const { error } = await this.supabase
+                .from('watchlist')
+                .delete()
+                .eq('email', email)
+                .eq('movieID', movieID);
+            if (error) {
+                console.error('Error deleting from watchlist:', error);
+                throw new Error('Đã xảy ra lỗi khi xóa phim khỏi danh sách theo dõi.');
+            }
+            return { success: true };
+        }
+        catch (error) {
+            console.error('Error in deleteFromWatchlist:', error);
+            throw error;
+        }
+    }
 };
 exports.UserService = UserService;
 exports.UserService = UserService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_2.Inject)('SUPABASE_CLIENT')),
     __param(2, (0, common_2.Inject)('REDIS_CLIENT')),
+    __param(3, (0, mongoose_1.InjectModel)(movie_schema_1.Movie.name, 'movie1Connection')),
+    __param(4, (0, mongoose_1.InjectModel)(movie_schema_1.Movie.name, 'movie2Connection')),
     __metadata("design:paramtypes", [supabase_js_1.SupabaseClient,
-        jwt_1.JwtService, typeof (_a = typeof Redis !== "undefined" && Redis) === "function" ? _a : Object])
+        jwt_1.JwtService, typeof (_a = typeof Redis !== "undefined" && Redis) === "function" ? _a : Object, mongoose_2.Model,
+        mongoose_2.Model])
 ], UserService);
 //# sourceMappingURL=user.service.js.map

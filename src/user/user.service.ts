@@ -8,12 +8,20 @@ import * as Redis from 'ioredis';
 import * as nodemailer from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
 import { NotFoundError } from 'rxjs';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Movie } from '../movie/movie.schema';
 @Injectable()
 export class UserService {
   constructor(
     @Inject('SUPABASE_CLIENT') private readonly supabase: SupabaseClient,
     private readonly jwtService: JwtService,
     @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
+    @InjectModel(Movie.name, 'movie1Connection')
+    private readonly movieModel1: Model<Movie>,
+
+    @InjectModel(Movie.name, 'movie2Connection')
+    private readonly movieModel2: Model<Movie>,
   ) { }
   private googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -338,7 +346,7 @@ export class UserService {
       if (rating < 1 || rating > 10) {
         throw new BadRequestException('Điểm đánh giá phải từ 1 đến 10.');
       }
-  
+
       // Kiểm tra xem người dùng đã đánh giá phim này chưa
       const { data, error } = await this.supabase
         .from('rating')
@@ -346,7 +354,7 @@ export class UserService {
         .eq('userID', userId)
         .eq('movieID', movieId)
         .single();
-  
+
       if (data) {
         // Nếu đã có đánh giá, có thể update lại điểm
         const { error: updateError } = await this.supabase
@@ -354,27 +362,116 @@ export class UserService {
           .update({ point: rating, date: new Date() })
           .eq('userID', userId)
           .eq('movieID', movieId);
-  
+
         if (updateError) {
           throw new BadRequestException('Không thể cập nhật điểm đánh giá.');
         }
-  
+
         return { success: true };
       } else {
         // Nếu chưa có đánh giá, thực hiện insert
         const { error: insertError } = await this.supabase
           .from('rating')
           .insert([{ userID: userId, movieID: movieId, point: rating, date: new Date() }]);
-  
+
         if (insertError) {
           throw new BadRequestException('Không thể thêm điểm đánh giá.');
         }
-  
+
         return { success: true };
       }
     } catch (error) {
       console.log(error)
     }
-    
+
   }
+  async addToWatchlist(email: string, movieID: number): Promise<{ success: boolean }> {
+    try {
+      // Kiểm tra xem phim đã có trong danh sách chưa
+      const { data, error } = await this.supabase
+        .from('watchlist')
+        .select('*')
+        .eq('email', email)
+        .eq('movieID', movieID)
+        .single();
+
+      if (data) {
+        throw new ConflictException('Phim đã có trong danh sách theo dõi.');
+      }
+      console.log(email, movieID);
+      // Thêm phim vào danh sách theo dõi
+      const { error: insertError } = await this.supabase
+        .from('watchlist')
+        .insert([{ email: email, movieID: movieID }]);
+
+      if (insertError) {
+        console.error('Error adding to watchlist:', insertError);
+        throw new Error('Đã xảy ra lỗi khi thêm vào danh sách theo dõi.');
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error in addToWatchlist:', error);
+      throw error;
+    }
+  }
+
+  async getWatchList(email: string): Promise<Movie[]> {
+    try {
+      // Lấy danh sách movieID từ Supabase
+      const { data: watchList, error } = await this.supabase
+        .from('watchlist')
+        .select('movieID')
+        .eq('email', email);
+
+      if (error) {
+        console.error('Error fetching watch list from Supabase:', error);
+        throw new NotFoundException('Không tìm thấy danh sách xem.');
+      }
+
+      if (!watchList || watchList.length === 0) {
+        throw new NotFoundException('Danh sách xem trống.');
+      }
+
+      // Tìm thông tin chi tiết từng phim trong MongoDB
+      const moviePromises = watchList.map(async (item) => {
+        const movieId = item.movieID;
+
+        const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).exec();
+        if (movieFromDb1) return movieFromDb1;
+
+        const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id: movieId }).exec();
+        if (movieFromDb2) return movieFromDb2;
+
+        throw new NotFoundException(`Không tìm thấy phim với ID: ${movieId}`);
+      });
+
+      const movies = await Promise.all(moviePromises);
+      return movies;
+    } catch (error) {
+      console.error('Error in getWatchList:', error.message || error);
+      throw new NotFoundException('Có lỗi xảy ra khi lấy danh sách xem.');
+    }
+  }
+
+  async deleteFromWatchlist(email: string, movieID: number): Promise<{ success: boolean }> {
+    try {
+      const { error } = await this.supabase
+        .from('watchlist')
+        .delete()
+        .eq('email', email)
+        .eq('movieID', movieID);
+
+      if (error) {
+        console.error('Error deleting from watchlist:', error);
+        throw new Error('Đã xảy ra lỗi khi xóa phim khỏi danh sách theo dõi.');
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error in deleteFromWatchlist:', error);
+      throw error;
+    }
+  }
+
 }
