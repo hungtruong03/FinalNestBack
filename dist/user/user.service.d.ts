@@ -1,11 +1,15 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { JwtService } from '@nestjs/jwt';
 import * as Redis from 'ioredis';
+import { Model } from 'mongoose';
+import { Movie } from '../movie/movie.schema';
 export declare class UserService {
     private readonly supabase;
     private readonly jwtService;
     private readonly redisClient;
-    constructor(supabase: SupabaseClient, jwtService: JwtService, redisClient: Redis);
+    private readonly movieModel1;
+    private readonly movieModel2;
+    constructor(supabase: SupabaseClient, jwtService: JwtService, redisClient: Redis, movieModel1: Model<Movie>, movieModel2: Model<Movie>);
     private googleClient;
     requestOTP(email: string): Promise<{
         success: boolean;
@@ -48,6 +52,13 @@ export declare class UserService {
     }>;
     private updateUserPassword;
     addRating(userId: number, movieId: number, rating: number): Promise<{
+        success: boolean;
+    }>;
+    addToWatchlist(email: string, movieID: number): Promise<{
+        success: boolean;
+    }>;
+    getWatchList(email: string): Promise<Movie[]>;
+    deleteFromWatchlist(email: string, movieID: number): Promise<{
         success: boolean;
     }>;
 }

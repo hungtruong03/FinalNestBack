@@ -7,19 +7,20 @@ export class JwtMiddleware implements NestMiddleware {
   constructor(private jwtService: JwtService) {}
 
   use(req: Request, res: Response, next: NextFunction) {
-    const authHeader = req.headers['authorization'];
-
-    if (!authHeader) {
-      throw new UnauthorizedException('Authorization header is missing');
-    }
-
-    const token = authHeader.split(' ')[1];
-
-    if (!token) {
-      throw new UnauthorizedException('Token is missing');
-    }
+   
 
     try {
+        const authHeader = req.headers['authorization'];
+
+        if (!authHeader) {
+          throw new UnauthorizedException('Authorization header is missing');
+        }
+    
+        const token = authHeader.split(' ')[1];
+    
+        if (!token) {
+          throw new UnauthorizedException('Token is missing');
+        }
         const decoded = this.jwtService.verify(token);
         req['email'] = decoded.email;
         req['isGoogleAccount'] = decoded.isGoogleAccount;
@@ -28,6 +29,7 @@ export class JwtMiddleware implements NestMiddleware {
 
         next();
     } catch (error) {
+        console.log(error)
       throw new UnauthorizedException('Invalid or expired token');
     }
   }

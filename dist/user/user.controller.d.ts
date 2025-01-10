@@ -57,4 +57,8 @@ export declare class UserController {
     }, movieId: number): Promise<{
         success: boolean;
     }>;
+    addWatchList(req: any, movieId: number): Promise<{
+        success: boolean;
+    }>;
+    getWatchList(req: any): Promise<import("../movie/movie.schema").Movie[]>;
 }

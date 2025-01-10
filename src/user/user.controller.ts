@@ -105,10 +105,23 @@ export class UserController {
     };
   }
   @HttpCode(HttpStatus.CREATED)
-  @Post(':movieId/rate')
+  @Post('rate/:movieId')
   async addRating(@Request() req, @Body() body: { rating: number },@Param('movieId') movieId:number) {
     const userId = req.email;
     const {  rating } = body;
     return this.userService.addRating(userId, movieId, rating);
+  }
+  @HttpCode(HttpStatus.CREATED)
+  @Post('watchlist/:movieId')
+  async addWatchList(@Request() req,@Param('movieId') movieId:number) {
+    const email = req.email;
+    console.log(email);
+    return this.userService.addToWatchlist(email, movieId);
+  }
+
+  @Get('watchlist')
+  async getWatchList(@Request() req) {
+    const email = req.email;
+    return this.userService.getWatchList(email);
   }
 }

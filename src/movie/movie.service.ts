@@ -80,7 +80,7 @@ export class MovieService {
     releaseDateFrom?: string;
     releaseDateTo?: string;
     genres?: string[];
-    sortBy?:string;
+    sortBy?: string;
     sortOrder?: string;
     limit?: number;
     page?: number;
@@ -100,7 +100,7 @@ export class MovieService {
     try {
       const query: any = {};
       if (keyword) {
-        query.title = { $regex: keyword, $options: 'i' }; // Tìm kiếm tiêu đề không phân biệt chữ hoa/thường
+        query.title = { $regex: keyword, $options: 'i' }; 
       }
       // Filter by vote_average
       if (minVoteAverage !== undefined) {
@@ -123,7 +123,15 @@ export class MovieService {
       if (genres && genres.length > 0) {
         query.genres = { $elemMatch: { name: { $in: genres } } };
       }
-
+      //3 12=24
+      //m1 28 
+      //m2 20
+      // m1 lay 4 thieu 8
+      //m2 lay 8 tư 1 dén 8
+      
+      //4 12 =36
+      //m1 28
+      //m2 20 thì bỏ 8 lay 9 ->20
       // Calculate skip and limit for pagination
       const skip = (page - 1) * limit;
 
@@ -136,21 +144,36 @@ export class MovieService {
         .exec();
 
       const countDb1 = await this.movieModel1.countDocuments(query).exec();
+      let moviesFromDb2=[];
+      if (skip+limit > countDb1) {
+        if (skip>countDb1){
+          const skip2 = skip - countDb1;
+          moviesFromDb2 = await this.movieModel2
+            .find(query)
+            .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
+            .skip(skip2)
+            .limit(limit)
+            .exec();
+        }
+        else {
+          const skip2 = (skip+limit) - countDb1;
+          moviesFromDb2 = await this.movieModel2
+            .find(query)
+            .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
+            .skip(0)
+            .limit(skip2)
+            .exec();
+        }
+        
+      }
 
-
-      const moviesFromDb2 = await this.movieModel2
-        .find(query)
-        .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
-        .skip(skip)
-        .limit(limit)
-        .exec();
 
       const countDb2 = await this.movieModel2.countDocuments(query).exec();
 
 
       // Merge and return results
       const combinedMovies = [...moviesFromDb1, ...moviesFromDb2];
-      const total = countDb1 + countDb2;
+      const total = Math.ceil((countDb1 + countDb2) / limit);
       console.log('duoc ở BES')
       return { movies: combinedMovies, total };
     } catch (error) {

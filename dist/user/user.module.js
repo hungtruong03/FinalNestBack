@@ -15,11 +15,13 @@ const jwt_strategy_1 = require("./jwt.strategy");
 const supabase_js_1 = require("@supabase/supabase-js");
 const Redis = require("ioredis");
 const jwt_middleware_1 = require("./jwt.middleware");
+const mongoose_1 = require("@nestjs/mongoose");
+const movie_schema_1 = require("../movie/movie.schema");
 let UserModule = class UserModule {
     configure(consumer) {
         consumer
             .apply(jwt_middleware_1.JwtMiddleware)
-            .forRoutes('user/:movieId/rate');
+            .forRoutes('user/rate/:movieId', 'user/watchlist');
     }
 };
 exports.UserModule = UserModule;
@@ -30,6 +32,8 @@ exports.UserModule = UserModule = __decorate([
                 secret: process.env.JWT_SECRET || 'SECRET_KEY',
                 signOptions: { expiresIn: '1h' },
             }),
+            mongoose_1.MongooseModule.forFeature([{ name: movie_schema_1.Movie.name, schema: movie_schema_1.MovieSchema }], 'movie1Connection'),
+            mongoose_1.MongooseModule.forFeature([{ name: movie_schema_1.Movie.name, schema: movie_schema_1.MovieSchema }], 'movie2Connection'),
         ],
         providers: [
             user_service_1.UserService,
