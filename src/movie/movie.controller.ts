@@ -43,4 +43,11 @@ export class MovieController {
         };
     }
 
+    @Get('reviews/:id')
+    async getMovieReviews(@Param('id') id: string) {
+        const tmdb_id = parseInt(id, 10);
+        return this.movieService.getMovieReviews(tmdb_id);
+    }
+
+
 }

@@ -31,6 +31,20 @@ export declare class Movie extends Document {
             profile_path: string;
         }>;
     };
+    reviews: Array<{
+        id: string;
+        author: string;
+        author_details: {
+            name: string;
+            username: string;
+            avatar_path: string | null;
+            rating: number | null;
+        };
+        content: string;
+        created_at: string;
+        updated_at: string;
+        url: string;
+    }>;
 }
 export declare const MovieSchema: import("mongoose").Schema<Movie, import("mongoose").Model<Movie, any, any, any, Document<unknown, any, Movie> & Movie & Required<{
     _id: unknown;

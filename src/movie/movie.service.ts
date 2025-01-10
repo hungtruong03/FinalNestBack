@@ -72,6 +72,7 @@ export class MovieService {
 
     return movie.trailers;
   }
+
   async searchMovies(filters: {
     keyword?: string,
     minVoteAverage?: number;
@@ -156,5 +157,23 @@ export class MovieService {
       console.log(error)
     }
   }
+
+  async getMovieReviews(tmdb_id: number): Promise<any[]> {
+    // Tìm movie trong database 1
+    const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id }).exec();
+    if (movieFromDb1 && movieFromDb1.reviews) {
+        return movieFromDb1.reviews;
+    }
+
+    // Nếu không tìm thấy trong database 1, tìm trong database 2
+    const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
+    if (movieFromDb2 && movieFromDb2.reviews) {
+        return movieFromDb2.reviews;
+    }
+
+    // Nếu không tìm thấy reviews trong cả hai database
+    return [];
+}
+
 
 }

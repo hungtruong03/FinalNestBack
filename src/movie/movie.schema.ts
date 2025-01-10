@@ -47,6 +47,22 @@ export class Movie extends Document {
       profile_path: string;
     }>;
   };
+  @Prop([Object])
+  reviews: Array<{
+    id: string; // ID của review
+    author: string; // Tên tác giả
+    author_details: {
+      name: string; // Tên đầy đủ của tác giả (có thể rỗng)
+      username: string; // Tên người dùng
+      avatar_path: string | null; // Đường dẫn tới avatar (nếu có)
+      rating: number | null; // Điểm đánh giá (nếu có)
+    };
+    content: string; // Nội dung đánh giá
+    created_at: string; // Thời gian tạo
+    updated_at: string; // Thời gian cập nhật
+    url: string; // Đường dẫn đến review trên web
+  }>;
+
 }
 
 export const MovieSchema = SchemaFactory.createForClass(Movie);

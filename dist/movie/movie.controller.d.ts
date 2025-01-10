@@ -8,4 +8,5 @@ export declare class MovieController {
         movies: import("./movie.schema").Movie[];
         totalPages: number;
     }>;
+    getMovieReviews(id: string): Promise<any[]>;
 }

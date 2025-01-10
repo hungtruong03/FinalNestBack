@@ -111,6 +111,17 @@ let MovieService = class MovieService {
             console.log(error);
         }
     }
+    async getMovieReviews(tmdb_id) {
+        const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id }).exec();
+        if (movieFromDb1 && movieFromDb1.reviews) {
+            return movieFromDb1.reviews;
+        }
+        const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
+        if (movieFromDb2 && movieFromDb2.reviews) {
+            return movieFromDb2.reviews;
+        }
+        return [];
+    }
 };
 exports.MovieService = MovieService;
 exports.MovieService = MovieService = __decorate([

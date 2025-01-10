@@ -55,6 +55,10 @@ __decorate([
     (0, mongoose_1.Prop)([Object]),
     __metadata("design:type", Object)
 ], Movie.prototype, "credits", void 0);
+__decorate([
+    (0, mongoose_1.Prop)([Object]),
+    __metadata("design:type", Array)
+], Movie.prototype, "reviews", void 0);
 exports.Movie = Movie = __decorate([
     (0, mongoose_1.Schema)({ collection: 'movies' })
 ], Movie);

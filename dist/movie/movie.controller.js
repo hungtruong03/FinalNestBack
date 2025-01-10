@@ -47,6 +47,10 @@ let MovieController = class MovieController {
             totalPages: result.total,
         };
     }
+    async getMovieReviews(id) {
+        const tmdb_id = parseInt(id, 10);
+        return this.movieService.getMovieReviews(tmdb_id);
+    }
 };
 exports.MovieController = MovieController;
 __decorate([
@@ -70,6 +74,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], MovieController.prototype, "searchMovie", null);
+__decorate([
+    (0, common_1.Get)('reviews/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], MovieController.prototype, "getMovieReviews", null);
 exports.MovieController = MovieController = __decorate([
     (0, common_1.Controller)('movies'),
     __metadata("design:paramtypes", [movie_service_1.MovieService])

@@ -22,4 +22,5 @@ export declare class MovieService {
         movies: Movie[];
         total: number;
     }>;
+    getMovieReviews(tmdb_id: number): Promise<any[]>;
 }
