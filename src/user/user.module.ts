@@ -1,21 +1,23 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import * as Redis from 'ioredis';
+import { JwtMiddleware } from './jwt.middleware';
 
 @Module({
   imports: [
     JwtModule.register({
-      secret: process.env.JWT_SECRET,
+      secret: process.env.JWT_SECRET||'SECRET_KEY',
       signOptions: { expiresIn: '1h' },
     }),
 
   ],
   providers: [
     UserService,
+
     JwtStrategy,
     {
       provide: 'SUPABASE_CLIENT',
@@ -38,4 +40,11 @@ import * as Redis from 'ioredis';
   controllers: [UserController],
   exports: [UserService],
 })
-export class UserModule {}
+export class UserModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(JwtMiddleware)
+      .forRoutes('user/:movieId/rate');
+  }
+}
+

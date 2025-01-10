@@ -142,7 +142,7 @@ export class UserService {
       throw new UnauthorizedException('Thông tin đăng nhập không hợp lệ.');
     }
 
-    const payload = { email, sub: data.id };
+    const payload = { email, isGoogleAccount: false };
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
@@ -230,12 +230,14 @@ export class UserService {
 
         user = data;
       }
+      const signpayload = { email, isGoogleAccount: true };
+      const accessToken = this.jwtService.sign(signpayload, { expiresIn: '15m' });
+      const refreshToken = this.jwtService.sign(signpayload, { expiresIn: '7d' });
 
       // Trả về thông tin người dùng
       return {
-        status: 'success',
-        message: 'Đăng nhập thành công!',
-        user,
+        accessToken,
+        refreshToken
       };
     } catch (error) {
       console.error('Error in loginWithGoogle:', error);
@@ -278,7 +280,7 @@ export class UserService {
     return { success: true };
   }
 
-  async verifyResetCode(resetCode: string): Promise<{email: string}> {
+  async verifyResetCode(resetCode: string): Promise<{ email: string }> {
     const email = await this.redisClient.get(`password-reset:${resetCode}`);
     if (email) {
       return { email };
@@ -332,42 +334,47 @@ export class UserService {
   }
   async addRating(userId: number, movieId: number, rating: number): Promise<{ success: boolean }> {
     // Kiểm tra rating hợp lệ (phải từ 1 đến 10)
-    if (rating < 1 || rating > 10) {
-      throw new BadRequestException('Điểm đánh giá phải từ 1 đến 10.');
-    }
-
-    // Kiểm tra xem người dùng đã đánh giá phim này chưa
-    const { data, error } = await this.supabase
-      .from('ratings')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('movie_id', movieId)
-      .single();
-
-    if (data) {
-      // Nếu đã có đánh giá, có thể update lại điểm
-      const { error: updateError } = await this.supabase
-        .from('ratings')
-        .update({ rating, date: new Date() })
-        .eq('user_id', userId)
-        .eq('movie_id', movieId);
-
-      if (updateError) {
-        throw new BadRequestException('Không thể cập nhật điểm đánh giá.');
+    try {
+      if (rating < 1 || rating > 10) {
+        throw new BadRequestException('Điểm đánh giá phải từ 1 đến 10.');
       }
-
-      return { success: true };
-    } else {
-      // Nếu chưa có đánh giá, thực hiện insert
-      const { error: insertError } = await this.supabase
-        .from('ratings')
-        .insert([{ user_id: userId, movie_id: movieId, rating, date: new Date() }]);
-
-      if (insertError) {
-        throw new BadRequestException('Không thể thêm điểm đánh giá.');
+  
+      // Kiểm tra xem người dùng đã đánh giá phim này chưa
+      const { data, error } = await this.supabase
+        .from('rating')
+        .select('*')
+        .eq('userID', userId)
+        .eq('movieID', movieId)
+        .single();
+  
+      if (data) {
+        // Nếu đã có đánh giá, có thể update lại điểm
+        const { error: updateError } = await this.supabase
+          .from('rating')
+          .update({ point: rating, date: new Date() })
+          .eq('userID', userId)
+          .eq('movieID', movieId);
+  
+        if (updateError) {
+          throw new BadRequestException('Không thể cập nhật điểm đánh giá.');
+        }
+  
+        return { success: true };
+      } else {
+        // Nếu chưa có đánh giá, thực hiện insert
+        const { error: insertError } = await this.supabase
+          .from('rating')
+          .insert([{ userID: userId, movieID: movieId, point: rating, date: new Date() }]);
+  
+        if (insertError) {
+          throw new BadRequestException('Không thể thêm điểm đánh giá.');
+        }
+  
+        return { success: true };
       }
-
-      return { success: true };
+    } catch (error) {
+      console.log(error)
     }
+    
   }
 }

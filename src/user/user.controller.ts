@@ -1,6 +1,6 @@
 import { UserService } from './user.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { Controller, Post, Body, Get, Request, UseGuards, NotFoundException, HttpCode, HttpStatus, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, Request, UseGuards, NotFoundException, HttpCode, HttpStatus, Query, Param } from '@nestjs/common';
 import { Public } from '../decorators/setMetaData';
 
 @Controller('user')
@@ -104,12 +104,11 @@ export class UserController {
       birthday: user.birthday,
     };
   }
-  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
-  @Post('rate')
-  async addRating(@Request() req, @Body() body: { movieId: number; rating: number }) {
-    const userId = req.user.userId;
-    const { movieId, rating } = body;
+  @Post(':movieId/rate')
+  async addRating(@Request() req, @Body() body: { rating: number },@Param('movieId') movieId:number) {
+    const userId = req.email;
+    const {  rating } = body;
     return this.userService.addRating(userId, movieId, rating);
   }
 }

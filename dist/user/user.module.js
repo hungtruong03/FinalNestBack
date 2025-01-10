@@ -14,14 +14,20 @@ const jwt_1 = require("@nestjs/jwt");
 const jwt_strategy_1 = require("./jwt.strategy");
 const supabase_js_1 = require("@supabase/supabase-js");
 const Redis = require("ioredis");
+const jwt_middleware_1 = require("./jwt.middleware");
 let UserModule = class UserModule {
+    configure(consumer) {
+        consumer
+            .apply(jwt_middleware_1.JwtMiddleware)
+            .forRoutes('user/:movieId/rate');
+    }
 };
 exports.UserModule = UserModule;
 exports.UserModule = UserModule = __decorate([
     (0, common_1.Module)({
         imports: [
             jwt_1.JwtModule.register({
-                secret: process.env.JWT_SECRET,
+                secret: process.env.JWT_SECRET || 'SECRET_KEY',
                 signOptions: { expiresIn: '1h' },
             }),
         ],
