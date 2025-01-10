@@ -27,13 +27,15 @@ export declare class UserService {
         name: string;
         googleId: string;
     }): Promise<{
-        status: string;
-        message: string;
-        user: any;
+        accessToken: string;
+        refreshToken: string;
+        status?: undefined;
+        message?: undefined;
     } | {
         status: string;
         message: any;
-        user?: undefined;
+        accessToken?: undefined;
+        refreshToken?: undefined;
     }>;
     requestPasswordReset(email: string): Promise<{
         success: boolean;
@@ -45,4 +47,7 @@ export declare class UserService {
         success: boolean;
     }>;
     private updateUserPassword;
+    addRating(userId: number, movieId: number, rating: number): Promise<{
+        success: boolean;
+    }>;
 }

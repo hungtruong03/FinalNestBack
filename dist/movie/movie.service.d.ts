@@ -8,13 +8,14 @@ export declare class MovieService {
     getMovieCredits(tmdb_id: number): Promise<any>;
     getTrailers(tmdb_id: number): Promise<any>;
     searchMovies(filters: {
+        keyword?: string;
         minVoteAverage?: number;
         minVoteCount?: number;
         releaseDateFrom?: string;
         releaseDateTo?: string;
         genres?: string[];
-        sortBy?: 'vote_average' | 'release_date';
-        sortOrder?: 'asc' | 'desc';
+        sortBy?: string;
+        sortOrder?: string;
         limit?: number;
         page?: number;
     }): Promise<{

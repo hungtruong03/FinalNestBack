@@ -124,7 +124,7 @@ let UserService = class UserService {
         if (!valid) {
             throw new common_1.UnauthorizedException('Thông tin đăng nhập không hợp lệ.');
         }
-        const payload = { email, sub: data.id };
+        const payload = { email, isGoogleAccount: false };
         const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
         const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
         return { accessToken, refreshToken };
@@ -191,10 +191,12 @@ let UserService = class UserService {
                 }
                 user = data;
             }
+            const signpayload = { email, isGoogleAccount: true };
+            const accessToken = this.jwtService.sign(signpayload, { expiresIn: '15m' });
+            const refreshToken = this.jwtService.sign(signpayload, { expiresIn: '7d' });
             return {
-                status: 'success',
-                message: 'Đăng nhập thành công!',
-                user,
+                accessToken,
+                refreshToken
             };
         }
         catch (error) {
@@ -271,6 +273,42 @@ let UserService = class UserService {
             return false;
         }
         return true;
+    }
+    async addRating(userId, movieId, rating) {
+        try {
+            if (rating < 1 || rating > 10) {
+                throw new common_1.BadRequestException('Điểm đánh giá phải từ 1 đến 10.');
+            }
+            const { data, error } = await this.supabase
+                .from('rating')
+                .select('*')
+                .eq('userID', userId)
+                .eq('movieID', movieId)
+                .single();
+            if (data) {
+                const { error: updateError } = await this.supabase
+                    .from('rating')
+                    .update({ point: rating, date: new Date() })
+                    .eq('userID', userId)
+                    .eq('movieID', movieId);
+                if (updateError) {
+                    throw new common_1.BadRequestException('Không thể cập nhật điểm đánh giá.');
+                }
+                return { success: true };
+            }
+            else {
+                const { error: insertError } = await this.supabase
+                    .from('rating')
+                    .insert([{ userID: userId, movieID: movieId, point: rating, date: new Date() }]);
+                if (insertError) {
+                    throw new common_1.BadRequestException('Không thể thêm điểm đánh giá.');
+                }
+                return { success: true };
+            }
+        }
+        catch (error) {
+            console.log(error);
+        }
     }
 };
 exports.UserService = UserService;

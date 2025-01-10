@@ -78,6 +78,11 @@ let UserController = class UserController {
             birthday: user.birthday,
         };
     }
+    async addRating(req, body, movieId) {
+        const userId = req.email;
+        const { rating } = body;
+        return this.userService.addRating(userId, movieId, rating);
+    }
 };
 exports.UserController = UserController;
 __decorate([
@@ -153,6 +158,16 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "getProfile", null);
+__decorate([
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    (0, common_1.Post)(':movieId/rate'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Param)('movieId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, Number]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "addRating", null);
 exports.UserController = UserController = __decorate([
     (0, common_1.Controller)('user'),
     __metadata("design:paramtypes", [user_service_1.UserService])

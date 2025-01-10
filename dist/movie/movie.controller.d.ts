@@ -4,18 +4,8 @@ export declare class MovieController {
     constructor(movieService: MovieService);
     getMovie(id: string): Promise<import("./movie.schema").Movie>;
     getMovieCredits(id: string): Promise<any>;
-    searchMovies(query: {
-        minVoteAverage?: string;
-        minVoteCount?: string;
-        releaseDateFrom?: string;
-        releaseDateTo?: string;
-        genres?: string;
-        sortBy?: 'vote_average' | 'release_date';
-        sortOrder?: 'asc' | 'desc';
-        limit?: string;
-        page?: string;
-    }): Promise<{
+    searchMovie(query: Record<string, string | undefined>): Promise<{
         movies: import("./movie.schema").Movie[];
-        total: number;
+        totalPages: number;
     }>;
 }

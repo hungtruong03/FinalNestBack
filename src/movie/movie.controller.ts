@@ -9,43 +9,38 @@ export class MovieController {
      * Lấy thông tin chi tiết phim theo `tmdb_id`.
      * @param id ID phim từ TMDB.
      */
-    @Get(':id')
+    @Get('detail/:id')
     async getMovie(@Param('id') id: string) {
         const tmdb_id = parseInt(id, 10);
         console.log(tmdb_id);
         return this.movieService.getMovieById(tmdb_id);
     }
 
-    @Get(':id/credits')
+    @Get('credits/:id')
     async getMovieCredits(@Param('id') id: string) {
         const tmdb_id = parseInt(id, 10);
         return this.movieService.getMovieCredits(tmdb_id);
     }
     @Get('search')
-    async searchMovies(@Query() query: {
-        minVoteAverage?: number;
-        minVoteCount?: number;
-        releaseDateFrom?: string;
-        releaseDateTo?: string;
-        genres?: string;
-        sortBy?: 'vote_average' | 'release_date';
-        sortOrder?: 'asc' | 'desc';
-        limit?: string;
-        page?: string;
-    }) {
+    async searchMovie(@Query() query: Record<string, string | undefined>) {
         const filters = {
-            minVoteAverage: query.minVoteAverage ,
-            minVoteCount: query.minVoteCount ,
-            releaseDateFrom: query.releaseDateFrom,
-            releaseDateTo: query.releaseDateTo,
-            genres: query.genres ? query.genres.split(',') : undefined,
-            sortBy: query.sortBy,
-            sortOrder: query.sortOrder,
-            limit: query.limit ? parseInt(query.limit, 10) : undefined,
-            page: query.page ? parseInt(query.page, 10) : undefined,
+            keyword: query.keyword || '',
+            minVoteAverage: parseFloat(query.minVoteAverage) || 0,
+            minVoteCount: parseInt(query.minVoteCount, 10) || 0,
+            releaseDateFrom: query.releaseDateFrom || '',
+            releaseDateTo: query.releaseDateTo || '',
+            genres: query.genres ? query.genres.split(',') : [],
+            sortBy: query.sortBy || 'vote_average',
+            sortOrder: query.sortOrder || 'desc',
+            limit: parseInt(query.limit, 10) || 10,
+            page: parseInt(query.page, 10) || 1,
         };
-        console.log('controller search')
-        return this.movieService.searchMovies(filters);
+
+        const result = await this.movieService.searchMovies(filters);
+        return {
+            movies: result.movies,
+            totalPages: result.total,
+        };
     }
 
 }

@@ -28,31 +28,36 @@ let MovieController = class MovieController {
         const tmdb_id = parseInt(id, 10);
         return this.movieService.getMovieCredits(tmdb_id);
     }
-    async searchMovies(query) {
+    async searchMovie(query) {
         const filters = {
-            minVoteAverage: query.minVoteAverage ? parseFloat(query.minVoteAverage) : undefined,
-            minVoteCount: query.minVoteCount ? parseInt(query.minVoteCount, 10) : undefined,
-            releaseDateFrom: query.releaseDateFrom,
-            releaseDateTo: query.releaseDateTo,
-            genres: query.genres ? query.genres.split(',') : undefined,
-            sortBy: query.sortBy,
-            sortOrder: query.sortOrder,
-            limit: query.limit ? parseInt(query.limit, 10) : undefined,
-            page: query.page ? parseInt(query.page, 10) : undefined,
+            keyword: query.keyword || '',
+            minVoteAverage: parseFloat(query.minVoteAverage) || 0,
+            minVoteCount: parseInt(query.minVoteCount, 10) || 0,
+            releaseDateFrom: query.releaseDateFrom || '',
+            releaseDateTo: query.releaseDateTo || '',
+            genres: query.genres ? query.genres.split(',') : [],
+            sortBy: query.sortBy || 'vote_average',
+            sortOrder: query.sortOrder || 'desc',
+            limit: parseInt(query.limit, 10) || 10,
+            page: parseInt(query.page, 10) || 1,
         };
-        return this.movieService.searchMovies(filters);
+        const result = await this.movieService.searchMovies(filters);
+        return {
+            movies: result.movies,
+            totalPages: result.total,
+        };
     }
 };
 exports.MovieController = MovieController;
 __decorate([
-    (0, common_1.Get)(':id'),
+    (0, common_1.Get)('detail/:id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], MovieController.prototype, "getMovie", null);
 __decorate([
-    (0, common_1.Get)(':id/credits'),
+    (0, common_1.Get)('credits/:id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -64,7 +69,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], MovieController.prototype, "searchMovies", null);
+], MovieController.prototype, "searchMovie", null);
 exports.MovieController = MovieController = __decorate([
     (0, common_1.Controller)('movies'),
     __metadata("design:paramtypes", [movie_service_1.MovieService])

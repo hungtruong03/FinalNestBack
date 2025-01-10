@@ -36,18 +36,25 @@ export declare class UserController {
     loginWithGoogle(body: {
         token: string;
     }): Promise<{
-        status: string;
-        message: string;
-        user: any;
+        accessToken: string;
+        refreshToken: string;
+        status?: undefined;
+        message?: undefined;
     } | {
         status: string;
         message: any;
-        user?: undefined;
+        accessToken?: undefined;
+        refreshToken?: undefined;
     }>;
     private decodeGoogleToken;
     getProfile(req: any): Promise<{
         email: any;
         name: any;
         birthday: any;
+    }>;
+    addRating(req: any, body: {
+        rating: number;
+    }, movieId: number): Promise<{
+        success: boolean;
     }>;
 }
