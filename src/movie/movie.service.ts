@@ -72,7 +72,6 @@ export class MovieService {
 
     return movie.trailers;
   }
-
   async searchMovies(filters: {
     keyword?: string,
     minVoteAverage?: number;
@@ -144,38 +143,11 @@ export class MovieService {
         .exec();
 
       const countDb1 = await this.movieModel1.countDocuments(query).exec();
-      let moviesFromDb2=[];
-      if (skip+limit > countDb1) {
-        if (skip>countDb1){
-          const skip2 = skip - countDb1;
-          moviesFromDb2 = await this.movieModel2
-            .find(query)
-            .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
-            .skip(skip2)
-            .limit(limit)
-            .exec();
-        }
-        else {
-          const skip2 = (skip+limit) - countDb1;
-          moviesFromDb2 = await this.movieModel2
-            .find(query)
-            .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
-            .skip(0)
-            .limit(skip2)
-            .exec();
-        }
-        
-      }
-
-
-      const countDb2 = await this.movieModel2.countDocuments(query).exec();
-
 
       // Merge and return results
-      const combinedMovies = [...moviesFromDb1, ...moviesFromDb2];
-      const total = Math.ceil((countDb1 + countDb2) / limit);
+      const total = Math.ceil((countDb1) / limit);
       console.log('duoc ở BES')
-      return { movies: combinedMovies, total };
+      return { movies: moviesFromDb1, total };
     } catch (error) {
       console.log(error)
     }
@@ -187,16 +159,8 @@ export class MovieService {
     if (movieFromDb1 && movieFromDb1.reviews) {
         return movieFromDb1.reviews;
     }
-
-    // Nếu không tìm thấy trong database 1, tìm trong database 2
-    const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
-    if (movieFromDb2 && movieFromDb2.reviews) {
-        return movieFromDb2.reviews;
-    }
-
+    
     // Nếu không tìm thấy reviews trong cả hai database
     return [];
-}
-
-
+  }
 }
