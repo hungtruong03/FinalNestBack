@@ -68,4 +68,15 @@ export declare class UserController {
         message: string;
         success: boolean;
     }>;
+    addFavourite(req: any, movieId: number): Promise<{
+        success: boolean;
+    }>;
+    getFavourite(req: any, page: string): Promise<{
+        movies: import("../movie/movie.schema").Movie[];
+        totalPages: number;
+    }>;
+    deleteFavourite(req: any, movieId: number): Promise<{
+        message: string;
+        success: boolean;
+    }>;
 }

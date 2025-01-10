@@ -63,4 +63,14 @@ export declare class UserService {
     deleteFromWatchlist(email: string, movieID: number): Promise<{
         success: boolean;
     }>;
+    getFavourite(email: string, page: number): Promise<{
+        movies: Movie[];
+        totalPages: number;
+    }>;
+    deleteFavourite(email: string, movieID: number): Promise<{
+        success: boolean;
+    }>;
+    addFavourite(email: string, movieID: number): Promise<{
+        success: boolean;
+    }>;
 }

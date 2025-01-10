@@ -101,6 +101,24 @@ let UserController = class UserController {
             success: result.success,
         };
     }
+    async addFavourite(req, movieId) {
+        const email = req.email;
+        console.log(email);
+        return this.userService.addFavourite(email, movieId);
+    }
+    async getFavourite(req, page) {
+        const email = req.email;
+        const pageNumber = parseInt(page, 10) || 1;
+        return this.userService.getFavourite(email, pageNumber);
+    }
+    async deleteFavourite(req, movieId) {
+        const email = req.email;
+        const result = await this.userService.deleteFavourite(email, movieId);
+        return {
+            message: 'Phim đã được xóa khỏi danh sách yêu thích .',
+            success: result.success,
+        };
+    }
 };
 exports.UserController = UserController;
 __decorate([
@@ -212,6 +230,32 @@ __decorate([
     __metadata("design:paramtypes", [Object, Number]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "deleteFromWatchlist", null);
+__decorate([
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    (0, common_1.Post)('favourite/:movieId'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('movieId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Number]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "addFavourite", null);
+__decorate([
+    (0, common_1.Get)('favourite'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('page')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "getFavourite", null);
+__decorate([
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, common_1.Delete)('favourite/:movieId'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('movieId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Number]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "deleteFavourite", null);
 exports.UserController = UserController = __decorate([
     (0, common_1.Controller)('user'),
     __metadata("design:paramtypes", [user_service_1.UserService])

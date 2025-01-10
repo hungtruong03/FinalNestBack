@@ -390,6 +390,82 @@ let UserService = class UserService {
             throw error;
         }
     }
+    async getFavourite(email, page) {
+        try {
+            const { data: favourite, error } = await this.supabase
+                .from('favourite')
+                .select('movieID')
+                .eq('email', email);
+            if (error) {
+                console.error('Error fetching favourite list from Supabase:', error);
+                throw new common_1.NotFoundException('Không tìm thấy danh sách xem.');
+            }
+            if (!favourite || favourite.length === 0) {
+                throw new common_1.NotFoundException('Danh sách xem trống.');
+            }
+            const skip = (page - 1) * 12;
+            const totalPages = Math.ceil(favourite.length / 12);
+            const paginatedWatchList = favourite.slice(skip, skip + 12);
+            const moviePromises = paginatedWatchList.map(async (item) => {
+                const movieId = item.movieID;
+                const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).exec();
+                if (movieFromDb1)
+                    return movieFromDb1;
+                throw new common_1.NotFoundException(`Không tìm thấy phim với ID: ${movieId}`);
+            });
+            const movies = await Promise.all(moviePromises);
+            return { movies, totalPages };
+        }
+        catch (error) {
+            console.error('Error in favourite:', error.message || error);
+            throw new common_1.NotFoundException('Có lỗi xảy ra khi lấy danh sách xem.');
+        }
+    }
+    async deleteFavourite(email, movieID) {
+        try {
+            const { error } = await this.supabase
+                .from('favourite')
+                .delete()
+                .eq('email', email)
+                .eq('movieID', movieID);
+            if (error) {
+                console.error('Error deleting from favourite:', error);
+                throw new Error('Đã xảy ra lỗi khi xóa phim khỏi danh sách theo dõi.');
+            }
+            return { success: true };
+        }
+        catch (error) {
+            console.error('Error in deleteFromWatchlist:', error);
+            throw error;
+        }
+    }
+    async addFavourite(email, movieID) {
+        try {
+            const { data, error } = await this.supabase
+                .from('favourite')
+                .select('*')
+                .eq('email', email)
+                .eq('movieID', movieID)
+                .single();
+            if (data) {
+                console.log("Phim đã có trong danh sách favourite");
+                return { success: false };
+            }
+            console.log(email, movieID);
+            const { error: insertError } = await this.supabase
+                .from('favourite')
+                .insert([{ email: email, movieID: movieID }]);
+            if (insertError) {
+                console.error('Error adding to favourite:', insertError);
+                throw new Error('Đã xảy ra lỗi khi thêm vào danh sách favourite.');
+            }
+            return { success: true };
+        }
+        catch (error) {
+            console.error('Error in addTofavourite:', error);
+            throw error;
+        }
+    }
 };
 exports.UserService = UserService;
 exports.UserService = UserService = __decorate([

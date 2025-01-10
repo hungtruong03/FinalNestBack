@@ -21,7 +21,7 @@ let UserModule = class UserModule {
     configure(consumer) {
         consumer
             .apply(jwt_middleware_1.JwtMiddleware)
-            .forRoutes('user/rate/:movieId', 'user/watchlist');
+            .forRoutes('user/rate/:movieId', 'user/watchlist', 'user/favourite');
     }
 };
 exports.UserModule = UserModule;
