@@ -32,6 +32,10 @@ let AiapiService = class AiapiService {
                 const convertedId = await this.movieService.getMovieByObjectId(params.movie_ids[0]);
                 params.movie_ids = convertedId;
             }
+            if (route === 'GENRE_PAGE' && params?.genre_ids?.length > 0) {
+                const genresString = params.genre_ids.join(',');
+                params.genre_ids = genresString;
+            }
             return { route, params };
         }
         catch (error) {

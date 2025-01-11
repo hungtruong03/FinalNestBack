@@ -150,6 +150,6 @@ exports.MovieService = MovieService = __decorate([
     __param(0, (0, mongoose_1.InjectModel)(movie_schema_1.Movie.name, 'movie1Connection')),
     __param(1, (0, mongoose_1.InjectModel)(movie_schema_1.Movie.name, 'movie2Connection')),
     __metadata("design:paramtypes", [mongoose_2.Model,
-    mongoose_2.Model])
+        mongoose_2.Model])
 ], MovieService);
 //# sourceMappingURL=movie.service.js.map
