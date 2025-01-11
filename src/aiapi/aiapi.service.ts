@@ -4,17 +4,12 @@ import axios from 'axios';
 
 @Injectable()
 export class AiapiService {
-    private geminiAPIKey: string;
-
     constructor(
         private readonly movieService: MovieService,
-    ) {
-        this.geminiAPIKey = process.env.LLM_API_KEY;
-    }
+    ) {}
 
     async getNavigateDestination(query: string) {
         try {
-            console.log(this.geminiAPIKey);
             const formattedKeyword = query ? query.replace(/\s+/g, '+') : '';
             const response = await axios.post(`https://awd-llm.azurewebsites.net/navigate/?llm_api_key=${process.env.LLM_API_KEY}&query=${formattedKeyword}`)
             // const response = await axios.post('https://awd-llm.azurewebsites.net/navigate/', {}, {

@@ -97,7 +97,7 @@ let MovieService = class MovieService {
         const { keyword, minVoteAverage, minVoteCount, releaseDateFrom, releaseDateTo, genres, sortBy = 'vote_average', sortOrder = 'desc', limit = 10, page = 1, } = filters;
         try {
             const formattedKeyword = keyword ? keyword.replace(/\s+/g, '+') : '';
-            const apiUrl = `https://awd-llm.azurewebsites.net/retriever?llm_api_key=AIzaSyBwZsdSLwduC0LxonJVNqtvuTQM3rd4GmQ&collection_name=movies&query=${formattedKeyword}&amount=10&threshold=0.5`;
+            const apiUrl = `https://awd-llm.azurewebsites.net/retriever?llm_api_key=${process.env.LLM_API_Key}&collection_name=movies&query=${formattedKeyword}&amount=10&threshold=0.5`;
             const response = await axios_1.default.get(apiUrl);
             const movieIds = response.data.data.result;
             if (!movieIds || movieIds.length === 0) {

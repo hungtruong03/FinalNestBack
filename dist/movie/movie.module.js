@@ -12,6 +12,7 @@ const mongoose_1 = require("@nestjs/mongoose");
 const movie_schema_1 = require("./movie.schema");
 const movie_service_1 = require("./movie.service");
 const movie_controller_1 = require("./movie.controller");
+const config_1 = require("@nestjs/config");
 let MovieModule = class MovieModule {
 };
 exports.MovieModule = MovieModule;
@@ -20,6 +21,10 @@ exports.MovieModule = MovieModule = __decorate([
         imports: [
             mongoose_1.MongooseModule.forFeature([{ name: movie_schema_1.Movie.name, schema: movie_schema_1.MovieSchema }], 'movie1Connection'),
             mongoose_1.MongooseModule.forFeature([{ name: movie_schema_1.Movie.name, schema: movie_schema_1.MovieSchema }], 'movie2Connection'),
+            config_1.ConfigModule.forRoot({
+                envFilePath: '.env',
+                isGlobal: true,
+            }),
         ],
         providers: [movie_service_1.MovieService],
         controllers: [movie_controller_1.MovieController],

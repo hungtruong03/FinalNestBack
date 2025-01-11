@@ -16,13 +16,13 @@ const axios_1 = require("axios");
 let AiapiService = class AiapiService {
     constructor(movieService) {
         this.movieService = movieService;
-        this.geminiAPIKey = process.env.LLM_API_Key;
+        this.geminiAPIKey = process.env.LLM_API_KEY;
     }
     async getNavigateDestination(query) {
         try {
-            const response = await axios_1.default.post('https://awd-llm.azurewebsites.net/navigate/', {}, {
-                params: { 'llm_api_key': this.geminiAPIKey, query },
-            });
+            const formattedKeyword = query ? query.replace(/\s+/g, '+') : '';
+            const response = await axios_1.default.post(`https://awd-llm.azurewebsites.net/navigate/?llm_api_key=${this.geminiAPIKey}&query=${formattedKeyword}`);
+            console.log('Response:', response);
             const { data } = response;
             if (data.status !== 200) {
                 throw new common_1.BadRequestException(`API returned status: ${data.status}`);
@@ -31,10 +31,6 @@ let AiapiService = class AiapiService {
             if ((route === 'CAST_PAGE' || route === 'MOVIE_PAGE') && params?.movie_ids?.length > 0) {
                 const convertedId = await this.movieService.getMovieByObjectId(params.movie_ids[0]);
                 params.movie_ids = convertedId;
-            }
-            if (route === 'GENRE_PAGE' && params?.genre_ids?.length > 0) {
-                const genresString = params.genre_ids.join(',');
-                params.genre_ids = genresString;
             }
             return { route, params };
         }
