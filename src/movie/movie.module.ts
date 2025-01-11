@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Movie, MovieSchema } from './movie.schema';
 import { MovieService } from './movie.service';
 import { MovieController } from './movie.controller';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -16,6 +17,10 @@ import { MovieController } from './movie.controller';
       [{ name: Movie.name, schema: MovieSchema }],
       'movie2Connection',
     ),
+    ConfigModule.forRoot({
+      envFilePath: '.env',
+      isGlobal: true,
+    }),
   ],
   providers: [MovieService],
   controllers: [MovieController],
