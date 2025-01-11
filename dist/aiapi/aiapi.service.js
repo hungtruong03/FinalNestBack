@@ -16,13 +16,11 @@ const axios_1 = require("axios");
 let AiapiService = class AiapiService {
     constructor(movieService) {
         this.movieService = movieService;
-        this.geminiAPIKey = process.env.LLM_API_KEY;
     }
     async getNavigateDestination(query) {
         try {
             const formattedKeyword = query ? query.replace(/\s+/g, '+') : '';
-            const response = await axios_1.default.post(`https://awd-llm.azurewebsites.net/navigate/?llm_api_key=${this.geminiAPIKey}&query=${formattedKeyword}`);
-            console.log('Response:', response);
+            const response = await axios_1.default.post(`https://awd-llm.azurewebsites.net/navigate/?llm_api_key=${process.env.LLM_API_KEY}&query=${formattedKeyword}`);
             const { data } = response;
             if (data.status !== 200) {
                 throw new common_1.BadRequestException(`API returned status: ${data.status}`);
