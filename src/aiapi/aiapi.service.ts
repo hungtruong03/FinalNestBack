@@ -9,16 +9,16 @@ export class AiapiService {
     constructor(
         private readonly movieService: MovieService,
     ) {
-        this.geminiAPIKey = process.env.LLM_API_Key;
+        this.geminiAPIKey = process.env.LLM_API_KEY;
     }
 
     async getNavigateDestination(query: string) {
         try {
-            const response = await axios.post('https://awd-llm.azurewebsites.net/navigate/', {}, {
-                params: { 'llm_api_key': this.geminiAPIKey, query },
-            });
-
-            console.log('Response:', response);
+            const formattedKeyword = query ? query.replace(/\s+/g, '+') : '';
+            const response = await axios.post(`https://awd-llm.azurewebsites.net/navigate/?llm_api_key=${this.geminiAPIKey}&query=${formattedKeyword}`)
+            // const response = await axios.post('https://awd-llm.azurewebsites.net/navigate/', {}, {
+            //     params: { 'llm_api_key': this.geminiAPIKey, query },
+            // });
 
             const { data } = response;
 
