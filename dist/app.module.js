@@ -16,6 +16,7 @@ const mongoose_1 = require("@nestjs/mongoose");
 const movie_module_1 = require("./movie/movie.module");
 const config_1 = require("@nestjs/config");
 const homeapi_module_1 = require("./homeapi/homeapi.module");
+const aiapi_module_1 = require("./aiapi/aiapi.module");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer.apply((req, res, next) => {
@@ -51,6 +52,7 @@ exports.AppModule = AppModule = __decorate([
             }),
             movie_module_1.MovieModule,
             homeapi_module_1.HomeapiModule,
+            aiapi_module_1.AiapiModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

@@ -29,11 +29,6 @@ let MovieService = class MovieService {
             console.log('Found in movie1Connection');
             return movieFromDb1;
         }
-        const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
-        if (movieFromDb2) {
-            console.log('Found in movie2Connection');
-            return movieFromDb2;
-        }
         throw new common_1.NotFoundException('Movie not found in either database');
     }
     async getMovieCredits(tmdb_id) {
@@ -43,26 +38,13 @@ let MovieService = class MovieService {
             console.log('Found in movie1Connection');
             return movieFromDb1.credits;
         }
-        const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
-        if (movieFromDb2) {
-            console.log('Found in movie2Connection');
-            return movieFromDb2.credits;
-        }
-        throw new common_1.NotFoundException('Movie not found in either database');
+        throw new common_1.NotFoundException('Movie not found.');
     }
     async getTrailers(tmdb_id) {
         const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id }).exec();
-        const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
-        let movie = null;
-        if (movieFromDb1) {
-            movie = movieFromDb1;
-        }
-        else {
-            movie = movieFromDb2;
-        }
-        if (!movie)
+        if (!movieFromDb1)
             throw new common_1.NotFoundException('Movie not found.');
-        return movie.trailers;
+        return movieFromDb1.trailers;
     }
     async searchMovies(filters) {
         const { keyword, minVoteAverage, minVoteCount, releaseDateFrom, releaseDateTo, genres, sortBy = 'vote_average', sortOrder = 'desc', limit = 10, page = 1, } = filters;
@@ -109,6 +91,13 @@ let MovieService = class MovieService {
             return movieFromDb1.reviews;
         }
         return [];
+    }
+    async getMovieByObjectId(objectId) {
+        const movieFromDb1 = await this.movieModel1.findById(objectId).exec();
+        if (movieFromDb1) {
+            return movieFromDb1.tmdb_id;
+        }
+        throw new common_1.NotFoundException('Movie not found.');
     }
 };
 exports.MovieService = MovieService;

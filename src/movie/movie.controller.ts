@@ -49,5 +49,8 @@ export class MovieController {
         return this.movieService.getMovieReviews(tmdb_id);
     }
 
-
+    @Get('byObjectId/:objectId')
+    async getMovieByObjectId(@Param('objectId') objectId: string) {
+        return this.movieService.getMovieByObjectId(objectId);
+    }
 }

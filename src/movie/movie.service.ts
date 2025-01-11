@@ -26,12 +26,6 @@ export class MovieService {
       return movieFromDb1;
     }
 
-    const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
-    if (movieFromDb2) {
-      console.log('Found in movie2Connection');
-      return movieFromDb2;
-    }
-
     throw new NotFoundException('Movie not found in either database');
   }
 
@@ -48,29 +42,15 @@ export class MovieService {
       return movieFromDb1.credits;
     }
 
-    const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
-    if (movieFromDb2) {
-      console.log('Found in movie2Connection');
-      return movieFromDb2.credits;
-    }
-
-    throw new NotFoundException('Movie not found in either database');
+    throw new NotFoundException('Movie not found.');
   }
 
   async getTrailers(tmdb_id: number): Promise<any> {
     const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id }).exec();
-    const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
-    let movie = null;
 
-    if (movieFromDb1) {
-      movie = movieFromDb1;
-    } else {
-      movie = movieFromDb2;
-    }
+    if (!movieFromDb1) throw new NotFoundException('Movie not found.');
 
-    if (!movie) throw new NotFoundException('Movie not found.');
-
-    return movie.trailers;
+    return movieFromDb1.trailers;
   }
   async searchMovies(filters: {
     keyword?: string,
@@ -162,5 +142,14 @@ export class MovieService {
     
     // Nếu không tìm thấy reviews trong cả hai database
     return [];
+  }
+
+  async getMovieByObjectId(objectId: string): Promise<any> {
+    const movieFromDb1 = await this.movieModel1.findById(objectId).exec();
+    if (movieFromDb1) {
+      return movieFromDb1.tmdb_id;
+    }
+
+    throw new NotFoundException('Movie not found.');
   }
 }

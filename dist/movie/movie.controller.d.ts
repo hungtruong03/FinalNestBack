@@ -9,4 +9,5 @@ export declare class MovieController {
         totalPages: number;
     }>;
     getMovieReviews(id: string): Promise<any[]>;
+    getMovieByObjectId(objectId: string): Promise<any>;
 }

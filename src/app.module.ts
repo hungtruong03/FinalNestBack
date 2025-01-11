@@ -7,6 +7,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { MovieModule } from './movie/movie.module';
 import { ConfigModule } from '@nestjs/config';
 import { HomeapiModule } from './homeapi/homeapi.module';
+import { AiapiModule } from './aiapi/aiapi.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { HomeapiModule } from './homeapi/homeapi.module';
     }),
     MovieModule,
     HomeapiModule,
+    AiapiModule,
   ],
   controllers: [AppController],
   providers: [
