@@ -18,6 +18,8 @@ export class AiapiService {
                 params: { 'llm_api_key': this.geminiAPIKey, query },
             });
 
+            console.log('Response:', response);
+
             const { data } = response;
 
             if (data.status !== 200) {
