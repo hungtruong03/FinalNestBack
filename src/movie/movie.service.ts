@@ -160,7 +160,7 @@ export class MovieService {
     } = filters;
     try {
       const formattedKeyword = keyword ? keyword.replace(/\s+/g, '+') : '';
-      const apiUrl = `https://awd-llm.azurewebsites.net/retriever?llm_api_key=${process.env.LLM_API_Key}&collection_name=movies&query=${formattedKeyword}&amount=10&threshold=0.5`;
+      const apiUrl = `https://awd-llm.azurewebsites.net/retriever?llm_api_key=${process.env.LLM_API_KEY}&collection_name=movies&query=${formattedKeyword}&amount=10&threshold=0.5`;
       const response = await axios.get(apiUrl);
       const movieIds = response.data.data.result;
 
