@@ -9,4 +9,8 @@ export declare class MovieController {
         totalPages: number;
     }>;
     getMovieReviews(id: string): Promise<any[]>;
+    searchAIMovie(query: Record<string, string | undefined>): Promise<{
+        movies: import("./movie.schema").Movie[];
+        totalPages: number;
+    }>;
 }

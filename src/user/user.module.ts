@@ -12,7 +12,7 @@ import { Movie, MovieSchema } from '../movie/movie.schema';
   imports: [
     JwtModule.register({
       secret: process.env.JWT_SECRET||'SECRET_KEY',
-      signOptions: { expiresIn: '1h' },
+      signOptions: { expiresIn: '5h' },
     }),
     MongooseModule.forFeature(
       [{ name: Movie.name, schema: MovieSchema }],

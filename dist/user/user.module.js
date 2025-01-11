@@ -30,7 +30,7 @@ exports.UserModule = UserModule = __decorate([
         imports: [
             jwt_1.JwtModule.register({
                 secret: process.env.JWT_SECRET || 'SECRET_KEY',
-                signOptions: { expiresIn: '1h' },
+                signOptions: { expiresIn: '5h' },
             }),
             mongoose_1.MongooseModule.forFeature([{ name: movie_schema_1.Movie.name, schema: movie_schema_1.MovieSchema }], 'movie1Connection'),
         ],
