@@ -70,4 +70,9 @@ export class MovieController {
         };
     }
 
+
+    @Get('byObjectId/:objectId')
+    async getMovieByObjectId(@Param('objectId') objectId: string) {
+        return this.movieService.getMovieByObjectId(objectId);
+    }
 }

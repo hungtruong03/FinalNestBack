@@ -38,4 +38,5 @@ export declare class MovieService {
         movies: Movie[];
         total: number;
     }>;
+    getMovieByObjectId(objectId: string): Promise<any>;
 }

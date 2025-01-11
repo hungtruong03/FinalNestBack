@@ -157,17 +157,20 @@ let UserService = class UserService {
         }
         return data;
     }
-    async findOne(userId) {
+    async findOne(email) {
         const { data, error } = await this.supabase
             .from('users')
             .select('*')
-            .eq('id', userId)
+            .eq('email', email)
             .single();
         if (error) {
             console.error('Error finding user:', error);
-            throw new Error('Không tìm thấy người dùng.');
+            throw new common_1.NotFoundException('Không tìm thấy người dùng.');
         }
-        return data;
+        return {
+            email: data.email,
+            username: data.username,
+        };
     }
     async loginWithGoogle(payload) {
         const { email, name, googleId } = payload;

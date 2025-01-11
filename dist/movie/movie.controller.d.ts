@@ -13,4 +13,5 @@ export declare class MovieController {
         movies: import("./movie.schema").Movie[];
         totalPages: number;
     }>;
+    getMovieByObjectId(objectId: string): Promise<any>;
 }

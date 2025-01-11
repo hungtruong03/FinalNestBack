@@ -26,12 +26,6 @@ export class MovieService {
       return movieFromDb1;
     }
 
-    const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
-    if (movieFromDb2) {
-      console.log('Found in movie2Connection');
-      return movieFromDb2;
-    }
-
     throw new NotFoundException('Movie not found in either database');
   }
 
@@ -48,29 +42,15 @@ export class MovieService {
       return movieFromDb1.credits;
     }
 
-    const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
-    if (movieFromDb2) {
-      console.log('Found in movie2Connection');
-      return movieFromDb2.credits;
-    }
-
-    throw new NotFoundException('Movie not found in either database');
+    throw new NotFoundException('Movie not found.');
   }
 
   async getTrailers(tmdb_id: number): Promise<any> {
     const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id }).exec();
-    const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
-    let movie = null;
 
-    if (movieFromDb1) {
-      movie = movieFromDb1;
-    } else {
-      movie = movieFromDb2;
-    }
+    if (!movieFromDb1) throw new NotFoundException('Movie not found.');
 
-    if (!movie) throw new NotFoundException('Movie not found.');
-
-    return movie.trailers;
+    return movieFromDb1.trailers;
   }
   async searchMovies(filters: {
     keyword?: string,
@@ -99,7 +79,7 @@ export class MovieService {
     try {
       const query: any = {};
       if (keyword) {
-        query.title = { $regex: keyword, $options: 'i' }; 
+        query.title = { $regex: keyword, $options: 'i' };
       }
       // Filter by vote_average
       if (minVoteAverage !== undefined) {
@@ -122,7 +102,7 @@ export class MovieService {
       if (genres && genres.length > 0) {
         query.genres = { $elemMatch: { name: { $in: genres } } };
       }
-      
+
       // Calculate skip and limit for pagination
       const skip = (page - 1) * limit;
 
@@ -149,7 +129,7 @@ export class MovieService {
     // Tìm movie trong database 1
     const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id }).exec();
     if (movieFromDb1 && movieFromDb1.reviews) {
-        return movieFromDb1.reviews;
+      return movieFromDb1.reviews;
     }
     // Nếu không tìm thấy reviews trong cả hai database
     return [];
@@ -224,5 +204,13 @@ export class MovieService {
       console.log(error);
       throw new NotFoundException('An error occurred during the AI movie search');
     }
+  }
+  async getMovieByObjectId(objectId: string): Promise<any> {
+    const movieFromDb1 = await this.movieModel1.findById(objectId).exec();
+    if (movieFromDb1) {
+      return movieFromDb1.tmdb_id;
+    }
+
+    throw new NotFoundException('Movie not found.');
   }
 }
