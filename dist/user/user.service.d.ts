@@ -3,12 +3,14 @@ import { JwtService } from '@nestjs/jwt';
 import * as Redis from 'ioredis';
 import { Model } from 'mongoose';
 import { Movie } from '../movie/movie.schema';
+import { Similar } from '../similar/similar.schema';
 export declare class UserService {
     private readonly supabase;
     private readonly jwtService;
     private readonly redisClient;
     private readonly movieModel1;
-    constructor(supabase: SupabaseClient, jwtService: JwtService, redisClient: Redis, movieModel1: Model<Movie>);
+    private readonly similarModel;
+    constructor(supabase: SupabaseClient, jwtService: JwtService, redisClient: Redis, movieModel1: Model<Movie>, similarModel: Model<Similar>);
     private googleClient;
     requestOTP(email: string): Promise<{
         success: boolean;
@@ -75,4 +77,6 @@ export declare class UserService {
     addFavourite(email: string, movieID: number): Promise<{
         success: boolean;
     }>;
+    getRecommendations(email: string): Promise<any[]>;
+    getAllWatchList(email: string): Promise<Movie[]>;
 }

@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Movie } from './movie.schema';
 import axios from 'axios';
+
 @Injectable()
 export class MovieService {
   constructor(

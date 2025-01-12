@@ -162,4 +162,11 @@ export class UserController {
       success: result.success,
     };
   }
+
+  @Get('recommendations')
+  async getRecommendations(@Request() req) {
+    const email = req.email; // Lấy email từ token
+    return await this.userService.getRecommendations(email);
+  }
+
 }

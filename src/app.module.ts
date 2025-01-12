@@ -8,6 +8,7 @@ import { MovieModule } from './movie/movie.module';
 import { ConfigModule } from '@nestjs/config';
 import { HomeapiModule } from './homeapi/homeapi.module';
 import { AiapiModule } from './aiapi/aiapi.module';
+import { SimilarModule } from './similar/similar.module';
 
 @Module({
   imports: [
@@ -23,12 +24,16 @@ import { AiapiModule } from './aiapi/aiapi.module';
     MongooseModule.forRoot(process.env.MONGO_URI_MOVIE_1, {
       connectionName: 'movie1Connection',
     }),
+    MongooseModule.forRoot(process.env.MONGO_SIMILAR, {
+      connectionName: 'similarConnection',
+    }),
     MongooseModule.forRoot(process.env.MONGODB_HOMEAPI, {
       connectionName: 'HomeAPIConnection',
     }),
     MovieModule,
     HomeapiModule,
     AiapiModule,
+    SimilarModule
   ],
   controllers: [AppController],
   providers: [

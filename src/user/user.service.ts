@@ -7,10 +7,11 @@ import { OAuth2Client } from 'google-auth-library';
 import * as Redis from 'ioredis';
 import * as nodemailer from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
-import { NotFoundError } from 'rxjs';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Movie } from '../movie/movie.schema';
+import { Similar } from '../similar/similar.schema';
+
 @Injectable()
 export class UserService {
   constructor(
@@ -19,6 +20,7 @@ export class UserService {
     @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
     @InjectModel(Movie.name, 'movie1Connection')
     private readonly movieModel1: Model<Movie>,
+    @InjectModel(Similar.name, 'similarConnection') private readonly similarModel: Model<Similar>
 
     
   ) { }
@@ -596,4 +598,67 @@ export class UserService {
       throw error;
     }
   }
+
+  async getRecommendations(email: string): Promise<any[]> {
+    // Lấy toàn bộ danh sách watchlist
+    const watchlistMovies = await this.getAllWatchList(email);
+  
+    if (!watchlistMovies.length) {
+      throw new NotFoundException('Watchlist trống, không thể tạo recommendation.');
+    }
+  
+    const recommendations = [];
+  
+    for (const movie of watchlistMovies) {
+      // Tìm phim tương tự từ collection `similar`
+      const similarData = await this.similarModel.findOne({ tmdb_id: movie.tmdb_id }).exec();
+      if (similarData && similarData.similar_movies) {
+        recommendations.push(...similarData.similar_movies);
+      }
+    }
+  
+    // Loại bỏ trùng lặp dựa trên `id`
+    const uniqueRecommendations = Array.from(
+      new Set(recommendations.map((movie) => movie.id))
+    ).map((id) => recommendations.find((movie) => movie.id === id));
+
+    console.log(uniqueRecommendations.slice(0, 20));
+  
+    return uniqueRecommendations.slice(0, 20); // Trả về tối đa 20 phim
+  }
+  
+  async getAllWatchList(email: string): Promise<Movie[]> {
+    try {
+      const { data: watchList, error } = await this.supabase
+        .from('watchlist')
+        .select('movieID')
+        .eq('email', email);
+  
+      if (error) {
+        console.error('Error fetching watch list from Supabase:', error);
+        throw new NotFoundException('Không tìm thấy danh sách xem.');
+      }
+  
+      if (!watchList || watchList.length === 0) {
+        throw new NotFoundException('Danh sách xem trống.');
+      }
+  
+      const moviePromises = watchList.map(async (item) => {
+        const movieId = item.movieID;
+  
+        const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).exec();
+        if (movieFromDb1) return movieFromDb1;
+  
+        throw new NotFoundException(`Không tìm thấy phim với ID: ${movieId}`);
+      });
+  
+      const movies = await Promise.all(moviePromises);
+  
+      return movies;
+    } catch (error) {
+      console.error('Error in getAllWatchList:', error.message || error);
+      throw new NotFoundException('Có lỗi xảy ra khi lấy danh sách xem.');
+    }
+  }
+  
 }

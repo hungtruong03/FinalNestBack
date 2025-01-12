@@ -17,6 +17,8 @@ const Redis = require("ioredis");
 const jwt_middleware_1 = require("./jwt.middleware");
 const mongoose_1 = require("@nestjs/mongoose");
 const movie_schema_1 = require("../movie/movie.schema");
+const similar_schema_1 = require("../similar/similar.schema");
+const config_1 = require("@nestjs/config");
 let UserModule = class UserModule {
     configure(consumer) {
         consumer
@@ -33,6 +35,11 @@ exports.UserModule = UserModule = __decorate([
                 signOptions: { expiresIn: '5h' },
             }),
             mongoose_1.MongooseModule.forFeature([{ name: movie_schema_1.Movie.name, schema: movie_schema_1.MovieSchema }], 'movie1Connection'),
+            mongoose_1.MongooseModule.forFeature([{ name: similar_schema_1.Similar.name, schema: similar_schema_1.SimilarSchema }], 'similarConnection'),
+            config_1.ConfigModule.forRoot({
+                envFilePath: '.env',
+                isGlobal: true,
+            })
         ],
         providers: [
             user_service_1.UserService,

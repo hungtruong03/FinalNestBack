@@ -115,6 +115,10 @@ let UserController = class UserController {
             success: result.success,
         };
     }
+    async getRecommendations(req) {
+        const email = req.email;
+        return await this.userService.getRecommendations(email);
+    }
 };
 exports.UserController = UserController;
 __decorate([
@@ -259,6 +263,13 @@ __decorate([
     __metadata("design:paramtypes", [Object, Number]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "deleteFavourite", null);
+__decorate([
+    (0, common_1.Get)('recommendations'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "getRecommendations", null);
 exports.UserController = UserController = __decorate([
     (0, common_1.Controller)('user'),
     __metadata("design:paramtypes", [user_service_1.UserService])

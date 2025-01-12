@@ -77,4 +77,5 @@ export declare class UserController {
         message: string;
         success: boolean;
     }>;
+    getRecommendations(req: any): Promise<any[]>;
 }

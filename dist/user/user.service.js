@@ -26,12 +26,14 @@ const uuid_1 = require("uuid");
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const movie_schema_1 = require("../movie/movie.schema");
+const similar_schema_1 = require("../similar/similar.schema");
 let UserService = class UserService {
-    constructor(supabase, jwtService, redisClient, movieModel1) {
+    constructor(supabase, jwtService, redisClient, movieModel1, similarModel) {
         this.supabase = supabase;
         this.jwtService = jwtService;
         this.redisClient = redisClient;
         this.movieModel1 = movieModel1;
+        this.similarModel = similarModel;
         this.googleClient = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_CLIENT_ID);
     }
     async requestOTP(email) {
@@ -482,6 +484,50 @@ let UserService = class UserService {
             throw error;
         }
     }
+    async getRecommendations(email) {
+        const watchlistMovies = await this.getAllWatchList(email);
+        if (!watchlistMovies.length) {
+            throw new common_1.NotFoundException('Watchlist trống, không thể tạo recommendation.');
+        }
+        const recommendations = [];
+        for (const movie of watchlistMovies) {
+            const similarData = await this.similarModel.findOne({ tmdb_id: movie.tmdb_id }).exec();
+            if (similarData && similarData.similar_movies) {
+                recommendations.push(...similarData.similar_movies);
+            }
+        }
+        const uniqueRecommendations = Array.from(new Set(recommendations.map((movie) => movie.id))).map((id) => recommendations.find((movie) => movie.id === id));
+        console.log(uniqueRecommendations.slice(0, 20));
+        return uniqueRecommendations.slice(0, 20);
+    }
+    async getAllWatchList(email) {
+        try {
+            const { data: watchList, error } = await this.supabase
+                .from('watchlist')
+                .select('movieID')
+                .eq('email', email);
+            if (error) {
+                console.error('Error fetching watch list from Supabase:', error);
+                throw new common_1.NotFoundException('Không tìm thấy danh sách xem.');
+            }
+            if (!watchList || watchList.length === 0) {
+                throw new common_1.NotFoundException('Danh sách xem trống.');
+            }
+            const moviePromises = watchList.map(async (item) => {
+                const movieId = item.movieID;
+                const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).exec();
+                if (movieFromDb1)
+                    return movieFromDb1;
+                throw new common_1.NotFoundException(`Không tìm thấy phim với ID: ${movieId}`);
+            });
+            const movies = await Promise.all(moviePromises);
+            return movies;
+        }
+        catch (error) {
+            console.error('Error in getAllWatchList:', error.message || error);
+            throw new common_1.NotFoundException('Có lỗi xảy ra khi lấy danh sách xem.');
+        }
+    }
 };
 exports.UserService = UserService;
 exports.UserService = UserService = __decorate([
@@ -489,7 +535,9 @@ exports.UserService = UserService = __decorate([
     __param(0, (0, common_2.Inject)('SUPABASE_CLIENT')),
     __param(2, (0, common_2.Inject)('REDIS_CLIENT')),
     __param(3, (0, mongoose_1.InjectModel)(movie_schema_1.Movie.name, 'movie1Connection')),
+    __param(4, (0, mongoose_1.InjectModel)(similar_schema_1.Similar.name, 'similarConnection')),
     __metadata("design:paramtypes", [supabase_js_1.SupabaseClient,
-        jwt_1.JwtService, typeof (_a = typeof Redis !== "undefined" && Redis) === "function" ? _a : Object, mongoose_2.Model])
+        jwt_1.JwtService, typeof (_a = typeof Redis !== "undefined" && Redis) === "function" ? _a : Object, mongoose_2.Model,
+        mongoose_2.Model])
 ], UserService);
 //# sourceMappingURL=user.service.js.map

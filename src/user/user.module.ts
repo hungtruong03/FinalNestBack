@@ -8,6 +8,10 @@ import * as Redis from 'ioredis';
 import { JwtMiddleware } from './jwt.middleware';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Movie, MovieSchema } from '../movie/movie.schema';
+import { Similar, SimilarSchema } from '../similar/similar.schema';
+import { ConfigModule } from '@nestjs/config';
+
+
 @Module({
   imports: [
     JwtModule.register({
@@ -18,7 +22,14 @@ import { Movie, MovieSchema } from '../movie/movie.schema';
       [{ name: Movie.name, schema: MovieSchema }],
       'movie1Connection',
     ),
-    
+    MongooseModule.forFeature(
+      [{ name: Similar.name, schema: SimilarSchema }],
+      'similarConnection',
+    ),
+    ConfigModule.forRoot({
+      envFilePath: '.env',
+      isGlobal: true,
+    })
 
   ],
   providers: [
