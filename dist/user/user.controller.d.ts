@@ -51,7 +51,8 @@ export declare class UserController {
     addRating(req: any, body: {
         rating: number;
     }, movieId: number): Promise<{
-        success: boolean;
+        vote_average: number;
+        vote_count: number;
     }>;
     getUserRating(req: any, movieId: number): Promise<number>;
     addWatchList(req: any, movieId: number): Promise<{

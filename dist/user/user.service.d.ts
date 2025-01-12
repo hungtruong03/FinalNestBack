@@ -52,7 +52,8 @@ export declare class UserService {
     private updateUserPassword;
     getUserRating(userId: number, movieId: number): Promise<number | null>;
     addRating(userId: number, movieId: number, rating: number): Promise<{
-        success: boolean;
+        vote_average: number;
+        vote_count: number;
     }>;
     addToWatchlist(email: string, movieID: number): Promise<{
         success: boolean;

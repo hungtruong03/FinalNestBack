@@ -297,7 +297,7 @@ let UserService = class UserService {
         if (rating < 1 || rating > 10) {
             throw new common_1.BadRequestException('Điểm đánh giá phải từ 1 đến 10.');
         }
-        const { data: existingRating, error } = await this.supabase
+        const { data: existingRating } = await this.supabase
             .from('rating')
             .select('*')
             .eq('userID', userId)
@@ -313,28 +313,22 @@ let UserService = class UserService {
             const adjustedVoteAverage = ((movie.vote_average * movie.vote_count) - oldRating + rating) / movie.vote_count;
             movie.vote_average = adjustedVoteAverage;
             await movie.save();
-            const { error: updateError } = await this.supabase
+            await this.supabase
                 .from('rating')
                 .update({ point: rating, date: new Date() })
                 .eq('userID', userId)
                 .eq('movieID', movieId);
-            if (updateError) {
-                throw new common_1.BadRequestException('Không thể cập nhật điểm đánh giá.');
-            }
-            return { success: true };
+            return { vote_average: movie.vote_average, vote_count: movie.vote_count };
         }
         const newVoteCount = movie.vote_count + 1;
         const newVoteAverage = ((movie.vote_average * movie.vote_count) + rating) / newVoteCount;
         movie.vote_average = newVoteAverage;
         movie.vote_count = newVoteCount;
         await movie.save();
-        const { error: insertError } = await this.supabase
+        await this.supabase
             .from('rating')
             .insert([{ userID: userId, movieID: movieId, point: rating, date: new Date() }]);
-        if (insertError) {
-            throw new common_1.BadRequestException('Không thể thêm điểm đánh giá.');
-        }
-        return { success: true };
+        return { vote_average: movie.vote_average, vote_count: movie.vote_count };
     }
     async addToWatchlist(email, movieID) {
         try {
