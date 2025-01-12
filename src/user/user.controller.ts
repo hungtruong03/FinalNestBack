@@ -111,6 +111,7 @@ export class UserController {
     const { rating } = body;
     return this.userService.addRating(userId, movieId, rating);
   }
+  
   @HttpCode(HttpStatus.CREATED)
   @Post('watchlist/:movieId')
   async addWatchList(@Request() req, @Param('movieId') movieId: number) {

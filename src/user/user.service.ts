@@ -340,49 +340,70 @@ export class UserService {
 
   }
   async addRating(userId: number, movieId: number, rating: number): Promise<{ success: boolean }> {
-    // Kiểm tra rating hợp lệ (phải từ 1 đến 10)
-    try {
-      if (rating < 1 || rating > 10) {
+    if (rating < 1 || rating > 10) {
         throw new BadRequestException('Điểm đánh giá phải từ 1 đến 10.');
-      }
+    }
 
-      // Kiểm tra xem người dùng đã đánh giá phim này chưa
-      const { data, error } = await this.supabase
+    // Kiểm tra nếu người dùng đã đánh giá phim này
+    const { data: existingRating, error } = await this.supabase
         .from('rating')
         .select('*')
         .eq('userID', userId)
         .eq('movieID', movieId)
         .single();
 
-      if (data) {
-        // Nếu đã có đánh giá, có thể update lại điểm
-        const { error: updateError } = await this.supabase
-          .from('rating')
-          .update({ point: rating, date: new Date() })
-          .eq('userID', userId)
-          .eq('movieID', movieId);
+    const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).exec();
 
-        if (updateError) {
-          throw new BadRequestException('Không thể cập nhật điểm đánh giá.');
-        }
+    const movie = movieFromDb1;
 
-        return { success: true };
-      } else {
-        // Nếu chưa có đánh giá, thực hiện insert
-        const { error: insertError } = await this.supabase
-          .from('rating')
-          .insert([{ userID: userId, movieID: movieId, point: rating, date: new Date() }]);
-
-        if (insertError) {
-          throw new BadRequestException('Không thể thêm điểm đánh giá.');
-        }
-
-        return { success: true };
-      }
-    } catch (error) {
-      console.log(error)
+    if (!movie) {
+        throw new NotFoundException('Không tìm thấy phim.');
     }
 
+    // Nếu đã có đánh giá, cập nhật lại
+    if (existingRating) {
+        const oldRating = existingRating.point;
+
+        // Loại bỏ điểm cũ khỏi vote_average
+        const adjustedVoteAverage =
+            ((movie.vote_average * movie.vote_count) - oldRating + rating) / movie.vote_count;
+
+        movie.vote_average = adjustedVoteAverage;
+        await movie.save();
+
+        // Cập nhật trong Supabase
+        const { error: updateError } = await this.supabase
+            .from('rating')
+            .update({ point: rating, date: new Date() })
+            .eq('userID', userId)
+            .eq('movieID', movieId);
+
+        if (updateError) {
+            throw new BadRequestException('Không thể cập nhật điểm đánh giá.');
+        }
+
+        return { success: true };
+    }
+
+    // Nếu chưa có đánh giá, thêm mới
+    const newVoteCount = movie.vote_count + 1;
+    const newVoteAverage =
+        ((movie.vote_average * movie.vote_count) + rating) / newVoteCount;
+
+    movie.vote_average = newVoteAverage;
+    movie.vote_count = newVoteCount;
+    await movie.save();
+
+    // Thêm vào Supabase
+    const { error: insertError } = await this.supabase
+        .from('rating')
+        .insert([{ userID: userId, movieID: movieId, point: rating, date: new Date() }]);
+
+    if (insertError) {
+        throw new BadRequestException('Không thể thêm điểm đánh giá.');
+    }
+
+    return { success: true };
   }
   async addToWatchlist(email: string, movieID: number): Promise<{ success: boolean }> {
     try {
