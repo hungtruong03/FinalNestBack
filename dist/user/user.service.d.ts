@@ -24,7 +24,7 @@ export declare class UserService {
         accessToken: string;
     }>;
     validateUser(userId: number): Promise<any>;
-    findOne(userId: number): Promise<any>;
+    findOne(email: string): Promise<any>;
     loginWithGoogle(payload: {
         email: string;
         name: string;

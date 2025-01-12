@@ -91,19 +91,11 @@ export class UserController {
 
   @Public()
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Request() req) {
-    const user = await this.userService.findOne(req.user.userId);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    return {
-      email: user.email,
-      name: user.name,
-      birthday: user.birthday,
-    };
+    return await this.userService.findOne(req.email);
   }
+
   @HttpCode(HttpStatus.CREATED)
   @Post('rate/:movieId')
   async addRating(@Request() req, @Body() body: { rating: number }, @Param('movieId') movieId: number) {

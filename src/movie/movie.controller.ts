@@ -48,6 +48,31 @@ export class MovieController {
         const tmdb_id = parseInt(id, 10);
         return this.movieService.getMovieReviews(tmdb_id);
     }
+    @Get('searchAI')
+    async searchAIMovie(@Query() query: Record<string, string | undefined>) {
+        const filters = {
+            keyword: query.keyword || '',
+            minVoteAverage: parseFloat(query.minVoteAverage) || 0,
+            minVoteCount: parseInt(query.minVoteCount, 10) || 0,
+            releaseDateFrom: query.releaseDateFrom || '',
+            releaseDateTo: query.releaseDateTo || '',
+            genres: query.genres ? query.genres.split(',') : [],
+            sortBy: query.sortBy || 'vote_average',
+            sortOrder: query.sortOrder || 'desc',
+            limit: parseInt(query.limit, 10) || 10,
+            page: parseInt(query.page, 10) || 1,
+        };
+        console.log('searchAI');
+        const result = await this.movieService.searchAIMovies(filters);
+        return {
+            movies: result.movies,
+            totalPages: result.total,
+        };
+    }
 
 
+    @Get('byObjectId/:objectId')
+    async getMovieByObjectId(@Param('objectId') objectId: string) {
+        return this.movieService.getMovieByObjectId(objectId);
+    }
 }

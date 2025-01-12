@@ -51,6 +51,29 @@ let MovieController = class MovieController {
         const tmdb_id = parseInt(id, 10);
         return this.movieService.getMovieReviews(tmdb_id);
     }
+    async searchAIMovie(query) {
+        const filters = {
+            keyword: query.keyword || '',
+            minVoteAverage: parseFloat(query.minVoteAverage) || 0,
+            minVoteCount: parseInt(query.minVoteCount, 10) || 0,
+            releaseDateFrom: query.releaseDateFrom || '',
+            releaseDateTo: query.releaseDateTo || '',
+            genres: query.genres ? query.genres.split(',') : [],
+            sortBy: query.sortBy || 'vote_average',
+            sortOrder: query.sortOrder || 'desc',
+            limit: parseInt(query.limit, 10) || 10,
+            page: parseInt(query.page, 10) || 1,
+        };
+        console.log('searchAI');
+        const result = await this.movieService.searchAIMovies(filters);
+        return {
+            movies: result.movies,
+            totalPages: result.total,
+        };
+    }
+    async getMovieByObjectId(objectId) {
+        return this.movieService.getMovieByObjectId(objectId);
+    }
 };
 exports.MovieController = MovieController;
 __decorate([
@@ -81,6 +104,20 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], MovieController.prototype, "getMovieReviews", null);
+__decorate([
+    (0, common_1.Get)('searchAI'),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], MovieController.prototype, "searchAIMovie", null);
+__decorate([
+    (0, common_1.Get)('byObjectId/:objectId'),
+    __param(0, (0, common_1.Param)('objectId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], MovieController.prototype, "getMovieByObjectId", null);
 exports.MovieController = MovieController = __decorate([
     (0, common_1.Controller)('movies'),
     __metadata("design:paramtypes", [movie_service_1.MovieService])

@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const movie_schema_1 = require("./movie.schema");
+const axios_1 = require("axios");
 let MovieService = class MovieService {
     constructor(movieModel1, movieModel2) {
         this.movieModel1 = movieModel1;
@@ -29,11 +30,6 @@ let MovieService = class MovieService {
             console.log('Found in movie1Connection');
             return movieFromDb1;
         }
-        const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
-        if (movieFromDb2) {
-            console.log('Found in movie2Connection');
-            return movieFromDb2;
-        }
         throw new common_1.NotFoundException('Movie not found in either database');
     }
     async getMovieCredits(tmdb_id) {
@@ -43,26 +39,13 @@ let MovieService = class MovieService {
             console.log('Found in movie1Connection');
             return movieFromDb1.credits;
         }
-        const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
-        if (movieFromDb2) {
-            console.log('Found in movie2Connection');
-            return movieFromDb2.credits;
-        }
-        throw new common_1.NotFoundException('Movie not found in either database');
+        throw new common_1.NotFoundException('Movie not found.');
     }
     async getTrailers(tmdb_id) {
         const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id }).exec();
-        const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
-        let movie = null;
-        if (movieFromDb1) {
-            movie = movieFromDb1;
-        }
-        else {
-            movie = movieFromDb2;
-        }
-        if (!movie)
+        if (!movieFromDb1)
             throw new common_1.NotFoundException('Movie not found.');
-        return movie.trailers;
+        return movieFromDb1.trailers;
     }
     async searchMovies(filters) {
         const { keyword, minVoteAverage, minVoteCount, releaseDateFrom, releaseDateTo, genres, sortBy = 'vote_average', sortOrder = 'desc', limit = 10, page = 1, } = filters;
@@ -109,6 +92,56 @@ let MovieService = class MovieService {
             return movieFromDb1.reviews;
         }
         return [];
+    }
+    async searchAIMovies(filters) {
+        const { keyword, minVoteAverage, minVoteCount, releaseDateFrom, releaseDateTo, genres, sortBy = 'vote_average', sortOrder = 'desc', limit = 10, page = 1, } = filters;
+        try {
+            const formattedKeyword = keyword ? keyword.replace(/\s+/g, '+') : '';
+            const apiUrl = `https://awd-llm.azurewebsites.net/retriever?llm_api_key=${process.env.LLM_API_KEY}&collection_name=movies&query=${formattedKeyword}&amount=10&threshold=0.5`;
+            const response = await axios_1.default.get(apiUrl);
+            const movieIds = response.data.data.result;
+            if (!movieIds || movieIds.length === 0) {
+                return { movies: [], total: 0 };
+            }
+            const query = { _id: { $in: movieIds } };
+            if (minVoteAverage !== undefined) {
+                query.vote_average = { $gte: minVoteAverage };
+            }
+            if (minVoteCount !== undefined) {
+                query.vote_count = { $gte: minVoteCount };
+            }
+            if (releaseDateFrom || releaseDateTo) {
+                query.release_date = {};
+                if (releaseDateFrom)
+                    query.release_date.$gte = releaseDateFrom;
+                if (releaseDateTo)
+                    query.release_date.$lte = releaseDateTo;
+            }
+            if (genres && genres.length > 0) {
+                query.genres = { $elemMatch: { name: { $in: genres } } };
+            }
+            const skip = (page - 1) * limit;
+            const moviesFromDb1 = await this.movieModel1
+                .find(query)
+                .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
+                .skip(skip)
+                .limit(limit)
+                .exec();
+            const countDb1 = await this.movieModel1.countDocuments(query).exec();
+            const total = Math.ceil(countDb1 / limit);
+            return { movies: moviesFromDb1, total };
+        }
+        catch (error) {
+            console.log(error);
+            throw new common_1.NotFoundException('An error occurred during the AI movie search');
+        }
+    }
+    async getMovieByObjectId(objectId) {
+        const movieFromDb1 = await this.movieModel1.findById(objectId).exec();
+        if (movieFromDb1) {
+            return movieFromDb1.tmdb_id;
+        }
+        throw new common_1.NotFoundException('Movie not found.');
     }
 };
 exports.MovieService = MovieService;

@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Movie } from './movie.schema';
-
+import axios from 'axios';
 @Injectable()
 export class MovieService {
   constructor(
@@ -26,12 +26,6 @@ export class MovieService {
       return movieFromDb1;
     }
 
-    const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
-    if (movieFromDb2) {
-      console.log('Found in movie2Connection');
-      return movieFromDb2;
-    }
-
     throw new NotFoundException('Movie not found in either database');
   }
 
@@ -48,29 +42,15 @@ export class MovieService {
       return movieFromDb1.credits;
     }
 
-    const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
-    if (movieFromDb2) {
-      console.log('Found in movie2Connection');
-      return movieFromDb2.credits;
-    }
-
-    throw new NotFoundException('Movie not found in either database');
+    throw new NotFoundException('Movie not found.');
   }
 
   async getTrailers(tmdb_id: number): Promise<any> {
     const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id }).exec();
-    const movieFromDb2 = await this.movieModel2.findOne({ tmdb_id }).exec();
-    let movie = null;
 
-    if (movieFromDb1) {
-      movie = movieFromDb1;
-    } else {
-      movie = movieFromDb2;
-    }
+    if (!movieFromDb1) throw new NotFoundException('Movie not found.');
 
-    if (!movie) throw new NotFoundException('Movie not found.');
-
-    return movie.trailers;
+    return movieFromDb1.trailers;
   }
   async searchMovies(filters: {
     keyword?: string,
@@ -99,7 +79,7 @@ export class MovieService {
     try {
       const query: any = {};
       if (keyword) {
-        query.title = { $regex: keyword, $options: 'i' }; 
+        query.title = { $regex: keyword, $options: 'i' };
       }
       // Filter by vote_average
       if (minVoteAverage !== undefined) {
@@ -122,15 +102,7 @@ export class MovieService {
       if (genres && genres.length > 0) {
         query.genres = { $elemMatch: { name: { $in: genres } } };
       }
-      //3 12=24
-      //m1 28 
-      //m2 20
-      // m1 lay 4 thieu 8
-      //m2 lay 8 tư 1 dén 8
-      
-      //4 12 =36
-      //m1 28
-      //m2 20 thì bỏ 8 lay 9 ->20
+
       // Calculate skip and limit for pagination
       const skip = (page - 1) * limit;
 
@@ -157,10 +129,88 @@ export class MovieService {
     // Tìm movie trong database 1
     const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id }).exec();
     if (movieFromDb1 && movieFromDb1.reviews) {
-        return movieFromDb1.reviews;
+      return movieFromDb1.reviews;
     }
-    
     // Nếu không tìm thấy reviews trong cả hai database
     return [];
+  }
+  async searchAIMovies(filters: {
+    keyword?: string,
+    minVoteAverage?: number;
+    minVoteCount?: number;
+    releaseDateFrom?: string;
+    releaseDateTo?: string;
+    genres?: string[];
+    sortBy?: string;
+    sortOrder?: string;
+    limit?: number;
+    page?: number;
+  }): Promise<{ movies: Movie[]; total: number; }> {
+    const {
+      keyword,
+      minVoteAverage,
+      minVoteCount,
+      releaseDateFrom,
+      releaseDateTo,
+      genres,
+      sortBy = 'vote_average',
+      sortOrder = 'desc',
+      limit = 10,
+      page = 1,
+    } = filters;
+    try {
+      const formattedKeyword = keyword ? keyword.replace(/\s+/g, '+') : '';
+      const apiUrl = `https://awd-llm.azurewebsites.net/retriever?llm_api_key=${process.env.LLM_API_KEY}&collection_name=movies&query=${formattedKeyword}&amount=10&threshold=0.5`;
+      const response = await axios.get(apiUrl);
+      const movieIds = response.data.data.result;
+
+      if (!movieIds || movieIds.length === 0) {
+        return { movies: [], total: 0 };
+      }
+
+      const query: any = { _id: { $in: movieIds } };
+
+      if (minVoteAverage !== undefined) {
+        query.vote_average = { $gte: minVoteAverage };
+      }
+
+      if (minVoteCount !== undefined) {
+        query.vote_count = { $gte: minVoteCount };
+      }
+
+      if (releaseDateFrom || releaseDateTo) {
+        query.release_date = {};
+        if (releaseDateFrom) query.release_date.$gte = releaseDateFrom;
+        if (releaseDateTo) query.release_date.$lte = releaseDateTo;
+      }
+
+      if (genres && genres.length > 0) {
+        query.genres = { $elemMatch: { name: { $in: genres } } };
+      }
+
+      const skip = (page - 1) * limit;
+      const moviesFromDb1 = await this.movieModel1
+        .find(query)
+        .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec();
+
+      const countDb1 = await this.movieModel1.countDocuments(query).exec();
+      const total = Math.ceil(countDb1 / limit);
+
+      return { movies: moviesFromDb1, total };
+    } catch (error) {
+      console.log(error);
+      throw new NotFoundException('An error occurred during the AI movie search');
+    }
+  }
+  async getMovieByObjectId(objectId: string): Promise<any> {
+    const movieFromDb1 = await this.movieModel1.findById(objectId).exec();
+    if (movieFromDb1) {
+      return movieFromDb1.tmdb_id;
+    }
+
+    throw new NotFoundException('Movie not found.');
   }
 }

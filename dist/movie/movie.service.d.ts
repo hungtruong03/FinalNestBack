@@ -23,4 +23,20 @@ export declare class MovieService {
         total: number;
     }>;
     getMovieReviews(tmdb_id: number): Promise<any[]>;
+    searchAIMovies(filters: {
+        keyword?: string;
+        minVoteAverage?: number;
+        minVoteCount?: number;
+        releaseDateFrom?: string;
+        releaseDateTo?: string;
+        genres?: string[];
+        sortBy?: string;
+        sortOrder?: string;
+        limit?: number;
+        page?: number;
+    }): Promise<{
+        movies: Movie[];
+        total: number;
+    }>;
+    getMovieByObjectId(objectId: string): Promise<any>;
 }

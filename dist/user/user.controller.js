@@ -14,7 +14,6 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserController = void 0;
 const user_service_1 = require("./user.service");
-const jwt_auth_guard_1 = require("./jwt-auth.guard");
 const common_1 = require("@nestjs/common");
 const setMetaData_1 = require("../decorators/setMetaData");
 let UserController = class UserController {
@@ -68,15 +67,7 @@ let UserController = class UserController {
         }
     }
     async getProfile(req) {
-        const user = await this.userService.findOne(req.user.userId);
-        if (!user) {
-            throw new common_1.NotFoundException('User not found');
-        }
-        return {
-            email: user.email,
-            name: user.name,
-            birthday: user.birthday,
-        };
+        return await this.userService.findOne(req.email);
     }
     async addRating(req, body, movieId) {
         const userId = req.email;
@@ -187,7 +178,6 @@ __decorate([
 __decorate([
     (0, setMetaData_1.Public)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Get)('profile'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),

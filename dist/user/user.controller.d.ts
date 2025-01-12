@@ -47,11 +47,7 @@ export declare class UserController {
         refreshToken?: undefined;
     }>;
     private decodeGoogleToken;
-    getProfile(req: any): Promise<{
-        email: any;
-        name: any;
-        birthday: any;
-    }>;
+    getProfile(req: any): Promise<any>;
     addRating(req: any, body: {
         rating: number;
     }, movieId: number): Promise<{

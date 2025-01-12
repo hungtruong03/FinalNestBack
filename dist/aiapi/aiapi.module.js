@@ -6,29 +6,26 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MovieModule = void 0;
+exports.AiapiModule = void 0;
 const common_1 = require("@nestjs/common");
-const mongoose_1 = require("@nestjs/mongoose");
-const movie_schema_1 = require("./movie.schema");
-const movie_service_1 = require("./movie.service");
-const movie_controller_1 = require("./movie.controller");
+const aiapi_service_1 = require("./aiapi.service");
+const aiapi_controller_1 = require("./aiapi.controller");
+const movie_module_1 = require("../movie/movie.module");
 const config_1 = require("@nestjs/config");
-let MovieModule = class MovieModule {
+let AiapiModule = class AiapiModule {
 };
-exports.MovieModule = MovieModule;
-exports.MovieModule = MovieModule = __decorate([
+exports.AiapiModule = AiapiModule;
+exports.AiapiModule = AiapiModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            mongoose_1.MongooseModule.forFeature([{ name: movie_schema_1.Movie.name, schema: movie_schema_1.MovieSchema }], 'movie1Connection'),
-            mongoose_1.MongooseModule.forFeature([{ name: movie_schema_1.Movie.name, schema: movie_schema_1.MovieSchema }], 'movie2Connection'),
+            movie_module_1.MovieModule,
             config_1.ConfigModule.forRoot({
                 envFilePath: '.env',
                 isGlobal: true,
             }),
         ],
-        providers: [movie_service_1.MovieService],
-        controllers: [movie_controller_1.MovieController],
-        exports: [movie_service_1.MovieService],
+        controllers: [aiapi_controller_1.AiapiController],
+        providers: [aiapi_service_1.AiapiService],
     })
-], MovieModule);
-//# sourceMappingURL=movie.module.js.map
+], AiapiModule);
+//# sourceMappingURL=aiapi.module.js.map
