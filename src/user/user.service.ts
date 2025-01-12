@@ -342,13 +342,29 @@ export class UserService {
     return true;
 
   }
-  async addRating(userId: number, movieId: number, rating: number): Promise<{ success: boolean }> {
+
+  async getUserRating(userId: number, movieId: number): Promise<number | null> {
+    const { data: existingRating, error } = await this.supabase
+        .from('rating')
+        .select('point')
+        .eq('userID', userId)
+        .eq('movieID', movieId)
+        .single();
+
+    if (error || !existingRating) {
+        return null; // Không có đánh giá
+    }
+
+    return existingRating.point; // Trả về điểm đánh giá
+  }
+
+  async addRating(userId: number, movieId: number, rating: number): Promise<{ vote_average: number; vote_count: number }> {
     if (rating < 1 || rating > 10) {
         throw new BadRequestException('Điểm đánh giá phải từ 1 đến 10.');
     }
 
-    // Kiểm tra nếu người dùng đã đánh giá phim này
-    const { data: existingRating, error } = await this.supabase
+    // Kiểm tra nếu user đã đánh giá phim
+    const { data: existingRating } = await this.supabase
         .from('rating')
         .select('*')
         .eq('userID', userId)
@@ -356,36 +372,31 @@ export class UserService {
         .single();
 
     const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).exec();
-
     const movie = movieFromDb1;
 
     if (!movie) {
         throw new NotFoundException('Không tìm thấy phim.');
     }
 
-    // Nếu đã có đánh giá, cập nhật lại
+    // Nếu đã có đánh giá
     if (existingRating) {
         const oldRating = existingRating.point;
 
-        // Loại bỏ điểm cũ khỏi vote_average
+        // Loại bỏ điểm cũ và thêm điểm mới
         const adjustedVoteAverage =
             ((movie.vote_average * movie.vote_count) - oldRating + rating) / movie.vote_count;
 
         movie.vote_average = adjustedVoteAverage;
         await movie.save();
 
-        // Cập nhật trong Supabase
-        const { error: updateError } = await this.supabase
+        // Cập nhật điểm mới trong Supabase
+        await this.supabase
             .from('rating')
             .update({ point: rating, date: new Date() })
             .eq('userID', userId)
             .eq('movieID', movieId);
 
-        if (updateError) {
-            throw new BadRequestException('Không thể cập nhật điểm đánh giá.');
-        }
-
-        return { success: true };
+        return { vote_average: movie.vote_average, vote_count: movie.vote_count };
     }
 
     // Nếu chưa có đánh giá, thêm mới
@@ -397,17 +408,14 @@ export class UserService {
     movie.vote_count = newVoteCount;
     await movie.save();
 
-    // Thêm vào Supabase
-    const { error: insertError } = await this.supabase
+    // Thêm đánh giá vào Supabase
+    await this.supabase
         .from('rating')
         .insert([{ userID: userId, movieID: movieId, point: rating, date: new Date() }]);
 
-    if (insertError) {
-        throw new BadRequestException('Không thể thêm điểm đánh giá.');
-    }
-
-    return { success: true };
+    return { vote_average: movie.vote_average, vote_count: movie.vote_count };
   }
+
   async addToWatchlist(email: string, movieID: number): Promise<{ success: boolean }> {
     try {
       // Kiểm tra xem phim đã có trong danh sách chưa

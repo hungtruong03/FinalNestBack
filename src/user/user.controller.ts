@@ -103,6 +103,14 @@ export class UserController {
     const { rating } = body;
     return this.userService.addRating(userId, movieId, rating);
   }
+
+  @Get('rate/:movieId')
+  async getUserRating(@Request() req, @Param('movieId') movieId: number) {
+      const userId = req.email;
+      console.log(userId);
+      return this.userService.getUserRating(userId, movieId);
+  }
+
   
   @HttpCode(HttpStatus.CREATED)
   @Post('watchlist/:movieId')

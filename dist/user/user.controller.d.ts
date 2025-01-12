@@ -53,6 +53,7 @@ export declare class UserController {
     }, movieId: number): Promise<{
         success: boolean;
     }>;
+    getUserRating(req: any, movieId: number): Promise<number>;
     addWatchList(req: any, movieId: number): Promise<{
         success: boolean;
     }>;

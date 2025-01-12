@@ -74,6 +74,11 @@ let UserController = class UserController {
         const { rating } = body;
         return this.userService.addRating(userId, movieId, rating);
     }
+    async getUserRating(req, movieId) {
+        const userId = req.email;
+        console.log(userId);
+        return this.userService.getUserRating(userId, movieId);
+    }
     async addWatchList(req, movieId) {
         const email = req.email;
         console.log(email);
@@ -194,6 +199,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object, Number]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "addRating", null);
+__decorate([
+    (0, common_1.Get)('rate/:movieId'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('movieId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Number]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "getUserRating", null);
 __decorate([
     (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
     (0, common_1.Post)('watchlist/:movieId'),

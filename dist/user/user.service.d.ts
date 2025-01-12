@@ -50,6 +50,7 @@ export declare class UserService {
         success: boolean;
     }>;
     private updateUserPassword;
+    getUserRating(userId: number, movieId: number): Promise<number | null>;
     addRating(userId: number, movieId: number, rating: number): Promise<{
         success: boolean;
     }>;
