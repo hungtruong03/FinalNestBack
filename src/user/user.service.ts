@@ -602,6 +602,7 @@ export class UserService {
   async getRecommendations(email: string): Promise<any[]> {
     // Lấy toàn bộ danh sách watchlist
     const watchlistMovies = await this.getAllWatchList(email);
+    console.log(watchlistMovies);
   
     if (!watchlistMovies.length) {
       throw new NotFoundException('Watchlist trống, không thể tạo recommendation.');
