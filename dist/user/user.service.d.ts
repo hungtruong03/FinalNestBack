@@ -79,4 +79,6 @@ export declare class UserService {
     }>;
     getRecommendations(email: string): Promise<any[]>;
     getAllWatchList(email: string): Promise<Movie[]>;
+    getAllFavouriteList(email: string): Promise<Movie[]>;
+    getCombinedMovies(email: string): Promise<Movie[]>;
 }

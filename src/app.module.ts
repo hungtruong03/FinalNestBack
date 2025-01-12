@@ -9,6 +9,8 @@ import { ConfigModule } from '@nestjs/config';
 import { HomeapiModule } from './homeapi/homeapi.module';
 import { AiapiModule } from './aiapi/aiapi.module';
 import { SimilarModule } from './similar/similar.module';
+import { RecommendationModule } from './recommendation/recommendation.module';
+import { MovieVectorModule } from './movievector/movie-vector.module';
 
 @Module({
   imports: [
@@ -18,6 +20,9 @@ import { SimilarModule } from './similar/similar.module';
     }),
     UserModule,
     // Kết nối MongoDB
+    MongooseModule.forRoot(process.env.MONGO_URI_MOVIE_VECTOR, {
+      connectionName: 'movievectorConnection',
+    }),
     MongooseModule.forRoot(process.env.MONGO_URI_MOVIE_2, {
       connectionName: 'movie2Connection',
     }),
@@ -33,7 +38,9 @@ import { SimilarModule } from './similar/similar.module';
     MovieModule,
     HomeapiModule,
     AiapiModule,
-    SimilarModule
+    SimilarModule,
+    RecommendationModule,
+    MovieVectorModule
   ],
   controllers: [AppController],
   providers: [

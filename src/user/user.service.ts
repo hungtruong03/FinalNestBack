@@ -629,40 +629,72 @@ export class UserService {
   }
   
   async getAllWatchList(email: string): Promise<Movie[]> {
-    try {
-      console.log(email);
-      const { data: watchList, error } = await this.supabase
+    const { data: watchList, error } = await this.supabase
         .from('watchlist')
         .select('movieID')
         .eq('email', email);
-  
-      if (error) {
-        console.error('Error fetching watch list from Supabase:', error);
-        throw new NotFoundException('Không tìm thấy danh sách xem.');
-      }
-  
-      if (!watchList || watchList.length === 0) {
-        throw new NotFoundException('Danh sách xem trống.');
-      }
-  
-      const moviePromises = watchList.map(async (item) => {
-        const movieId = item.movieID;
-  
-        const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).exec();
-        if (movieFromDb1) return movieFromDb1;
-  
-        throw new NotFoundException(`Không tìm thấy phim với ID: ${movieId}`);
-      });
-  
-      const movies = await Promise.all(moviePromises);
 
-      // console.log(movies);
-  
-      return movies;
-    } catch (error) {
-      console.error('Error in getAllWatchList:', error.message || error);
-      throw new NotFoundException('Có lỗi xảy ra khi lấy danh sách xem.');
+    if (error) {
+        console.error('Error fetching watchlist:', error);
+        throw new Error('Failed to fetch watchlist.');
     }
+
+    if (!watchList || watchList.length === 0) {
+        return []; // Trả về mảng rỗng nếu không có phim
+    }
+
+    // Lấy thông tin chi tiết phim từ MongoDB
+    const movies = await Promise.all(
+        watchList.map(async (item) => {
+            const movie = await this.movieModel1.findOne({ tmdb_id: item.movieID }).exec();
+            return movie;
+        })
+    );
+
+    return movies.filter(Boolean); // Loại bỏ các giá trị null (nếu có)
   }
+
+  async getAllFavouriteList(email: string): Promise<Movie[]> {
+    const { data: favouriteList, error } = await this.supabase
+        .from('favourite')
+        .select('movieID')
+        .eq('email', email);
+
+    if (error) {
+        console.error('Error fetching favourite list:', error);
+        throw new Error('Failed to fetch favourite list.');
+    }
+
+    if (!favouriteList || favouriteList.length === 0) {
+        return []; // Trả về mảng rỗng nếu không có phim
+    }
+
+    // Lấy thông tin chi tiết phim từ MongoDB
+    const movies = await Promise.all(
+        favouriteList.map(async (item) => {
+            const movie = await this.movieModel1.findOne({ tmdb_id: item.movieID }).exec();
+            return movie;
+        })
+    );
+
+    return movies.filter(Boolean); // Loại bỏ các giá trị null (nếu có)
+  }
+
+  async getCombinedMovies(email: string): Promise<Movie[]> {
+    const watchList = await this.getAllWatchList(email); // Lấy danh sách watchlist
+    const favouriteList = await this.getAllFavouriteList(email); // Lấy danh sách favourite
+
+    // Kết hợp và loại bỏ trùng lặp dựa trên `tmdb_id`
+    const combinedMovies = [
+        ...new Map(
+            [...watchList, ...favouriteList].map((movie) => [movie.tmdb_id, movie])
+        ).values(),
+    ];
+
+    return combinedMovies;
+  }
+
+  
+
   
 }

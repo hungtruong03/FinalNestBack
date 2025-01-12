@@ -18,6 +18,8 @@ const config_1 = require("@nestjs/config");
 const homeapi_module_1 = require("./homeapi/homeapi.module");
 const aiapi_module_1 = require("./aiapi/aiapi.module");
 const similar_module_1 = require("./similar/similar.module");
+const recommendation_module_1 = require("./recommendation/recommendation.module");
+const movie_vector_module_1 = require("./movievector/movie-vector.module");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer.apply((req, res, next) => {
@@ -42,6 +44,9 @@ exports.AppModule = AppModule = __decorate([
                 isGlobal: true,
             }),
             user_module_1.UserModule,
+            mongoose_1.MongooseModule.forRoot(process.env.MONGO_URI_MOVIE_VECTOR, {
+                connectionName: 'movievectorConnection',
+            }),
             mongoose_1.MongooseModule.forRoot(process.env.MONGO_URI_MOVIE_2, {
                 connectionName: 'movie2Connection',
             }),
@@ -57,7 +62,9 @@ exports.AppModule = AppModule = __decorate([
             movie_module_1.MovieModule,
             homeapi_module_1.HomeapiModule,
             aiapi_module_1.AiapiModule,
-            similar_module_1.SimilarModule
+            similar_module_1.SimilarModule,
+            recommendation_module_1.RecommendationModule,
+            movie_vector_module_1.MovieVectorModule
         ],
         controllers: [app_controller_1.AppController],
         providers: [

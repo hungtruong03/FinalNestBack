@@ -497,37 +497,51 @@ let UserService = class UserService {
             }
         }
         const uniqueRecommendations = Array.from(new Set(recommendations.map((movie) => movie.id))).map((id) => recommendations.find((movie) => movie.id === id));
-        console.log(uniqueRecommendations.slice(0, 20));
         return uniqueRecommendations.slice(0, 20);
     }
     async getAllWatchList(email) {
-        try {
-            console.log(email);
-            const { data: watchList, error } = await this.supabase
-                .from('watchlist')
-                .select('movieID')
-                .eq('email', email);
-            if (error) {
-                console.error('Error fetching watch list from Supabase:', error);
-                throw new common_1.NotFoundException('Không tìm thấy danh sách xem.');
-            }
-            if (!watchList || watchList.length === 0) {
-                throw new common_1.NotFoundException('Danh sách xem trống.');
-            }
-            const moviePromises = watchList.map(async (item) => {
-                const movieId = item.movieID;
-                const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).exec();
-                if (movieFromDb1)
-                    return movieFromDb1;
-                throw new common_1.NotFoundException(`Không tìm thấy phim với ID: ${movieId}`);
-            });
-            const movies = await Promise.all(moviePromises);
-            return movies;
+        const { data: watchList, error } = await this.supabase
+            .from('watchlist')
+            .select('movieID')
+            .eq('email', email);
+        if (error) {
+            console.error('Error fetching watchlist:', error);
+            throw new Error('Failed to fetch watchlist.');
         }
-        catch (error) {
-            console.error('Error in getAllWatchList:', error.message || error);
-            throw new common_1.NotFoundException('Có lỗi xảy ra khi lấy danh sách xem.');
+        if (!watchList || watchList.length === 0) {
+            return [];
         }
+        const movies = await Promise.all(watchList.map(async (item) => {
+            const movie = await this.movieModel1.findOne({ tmdb_id: item.movieID }).exec();
+            return movie;
+        }));
+        return movies.filter(Boolean);
+    }
+    async getAllFavouriteList(email) {
+        const { data: favouriteList, error } = await this.supabase
+            .from('favourite')
+            .select('movieID')
+            .eq('email', email);
+        if (error) {
+            console.error('Error fetching favourite list:', error);
+            throw new Error('Failed to fetch favourite list.');
+        }
+        if (!favouriteList || favouriteList.length === 0) {
+            return [];
+        }
+        const movies = await Promise.all(favouriteList.map(async (item) => {
+            const movie = await this.movieModel1.findOne({ tmdb_id: item.movieID }).exec();
+            return movie;
+        }));
+        return movies.filter(Boolean);
+    }
+    async getCombinedMovies(email) {
+        const watchList = await this.getAllWatchList(email);
+        const favouriteList = await this.getAllFavouriteList(email);
+        const combinedMovies = [
+            ...new Map([...watchList, ...favouriteList].map((movie) => [movie.tmdb_id, movie])).values(),
+        ];
+        return combinedMovies;
     }
 };
 exports.UserService = UserService;
