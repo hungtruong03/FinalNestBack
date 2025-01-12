@@ -502,6 +502,7 @@ let UserService = class UserService {
     }
     async getAllWatchList(email) {
         try {
+            console.log(email);
             const { data: watchList, error } = await this.supabase
                 .from('watchlist')
                 .select('movieID')

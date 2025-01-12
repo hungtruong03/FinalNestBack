@@ -104,6 +104,7 @@ let UserController = class UserController {
     }
     async getFavourite(req, page) {
         const email = req.email;
+        console.log(email, "fav");
         const pageNumber = parseInt(page, 10) || 1;
         return this.userService.getFavourite(email, pageNumber);
     }

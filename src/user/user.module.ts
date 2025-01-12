@@ -61,7 +61,7 @@ export class UserModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(JwtMiddleware)
-      .forRoutes('user/rate/:movieId','user/watchlist','user/favourite', 'user/profile');
+      .forRoutes('user/rate/:movieId','user/watchlist','user/favourite', 'user/profile', 'user/recommendations');
   }
 }
 

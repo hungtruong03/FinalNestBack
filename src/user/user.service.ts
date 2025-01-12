@@ -602,7 +602,7 @@ export class UserService {
   async getRecommendations(email: string): Promise<any[]> {
     // Lấy toàn bộ danh sách watchlist
     const watchlistMovies = await this.getAllWatchList(email);
-    console.log(watchlistMovies);
+    // console.log(watchlistMovies);
   
     if (!watchlistMovies.length) {
       throw new NotFoundException('Watchlist trống, không thể tạo recommendation.');
@@ -623,13 +623,14 @@ export class UserService {
       new Set(recommendations.map((movie) => movie.id))
     ).map((id) => recommendations.find((movie) => movie.id === id));
 
-    console.log(uniqueRecommendations.slice(0, 20));
+    // console.log(uniqueRecommendations.slice(0, 20));
   
     return uniqueRecommendations.slice(0, 20); // Trả về tối đa 20 phim
   }
   
   async getAllWatchList(email: string): Promise<Movie[]> {
     try {
+      console.log(email);
       const { data: watchList, error } = await this.supabase
         .from('watchlist')
         .select('movieID')
@@ -654,6 +655,8 @@ export class UserService {
       });
   
       const movies = await Promise.all(moviePromises);
+
+      // console.log(movies);
   
       return movies;
     } catch (error) {

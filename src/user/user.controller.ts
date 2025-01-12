@@ -149,6 +149,7 @@ export class UserController {
   @Get('favourite')
   async getFavourite(@Request() req, @Query('page') page: string,) {
     const email = req.email;
+    console.log(email, "fav");
     const pageNumber = parseInt(page, 10) || 1;
     return this.userService.getFavourite(email, pageNumber);
   }
@@ -165,7 +166,7 @@ export class UserController {
 
   @Get('recommendations')
   async getRecommendations(@Request() req) {
-    const email = req.email; // Lấy email từ token
+    const email = req.email;
     return await this.userService.getRecommendations(email);
   }
 
