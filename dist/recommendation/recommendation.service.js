@@ -31,7 +31,7 @@ let RecommendationService = class RecommendationService {
         const userMovies = await this.userService.getCombinedMovies(userId);
         const userMovieIds = new Set(userMovies.map((movie) => movie.tmdb_id));
         const userVectors = await Promise.all(userMovies.map((movie) => this.movieVectorService.getMovieVector(movie.tmdb_id)));
-        const allMovieVectors = await this.movieVectorModel.find().exec();
+        const allMovieVectors = await this.movieVectorModel.find().limit(200).exec();
         const recommendations = allMovieVectors
             .filter((vectorDoc) => !userMovieIds.has(vectorDoc.tmdb_id))
             .map((vectorDoc) => {

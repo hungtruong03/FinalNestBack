@@ -27,7 +27,7 @@ export class RecommendationService {
     );
   
     // Lấy toàn bộ vector từ cơ sở dữ liệu
-    const allMovieVectors = await this.movieVectorModel.find().exec();
+    const allMovieVectors = await this.movieVectorModel.find().limit(200).exec();
   
     // Tính toán độ tương đồng, bỏ qua các phim trong watchlist và favorite
     const recommendations = allMovieVectors
