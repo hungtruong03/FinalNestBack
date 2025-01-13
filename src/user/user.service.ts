@@ -21,8 +21,6 @@ export class UserService {
     @InjectModel(Movie.name, 'movie1Connection')
     private readonly movieModel1: Model<Movie>,
     @InjectModel(Similar.name, 'similarConnection') private readonly similarModel: Model<Similar>
-
-
   ) { }
   private googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -127,7 +125,7 @@ export class UserService {
 
     if (insertError) {
       console.error('Error inserting user:', insertError); // In ra lỗi chi tiết
-      throw new Error('Đã xảy ra lỗi khi đăng ký người dùng.');
+      throw new BadRequestException('Đã xảy ra lỗi khi đăng ký người dùng.');
     }
 
     await this.verifyOtp(email, otp);
@@ -188,29 +186,48 @@ export class UserService {
     return data;
   }
 
-  async findOne(email: string): Promise<any> {
-    // Tìm người dùng theo ID
-    const { data, error } = await this.supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
-
-    if (error) {
-      console.error('Error finding user:', error); // In ra lỗi chi tiết
-      throw new NotFoundException('Không tìm thấy người dùng.');
+  async findOne(email: string, isGoogleAccount: boolean): Promise<any> {
+    try {
+      const tableName = isGoogleAccount ? 'usersgg' : 'users';
+  
+      const { data, error } = await this.supabase
+        .from(tableName)
+        .select('*')
+        .eq('email', email)
+        .single();
+  
+      if (error || !data) {
+        console.error('Error finding user:', error || 'User not found');
+        throw new NotFoundException('Không tìm thấy người dùng.');
+      }
+  
+      return {
+        email: data.email,
+        username: data.username,
+        isGoogleAccount: isGoogleAccount,
+      };
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      throw new BadRequestException('Đã xảy ra lỗi khi tìm người dùng.');
     }
-
-    return {
-      email: data.email,
-      username: data.username,
-    };
   }
 
-  async loginWithGoogle(payload: { email: string; name: string; googleId: string }) {
-    const { email, name, googleId } = payload;
+  async loginWithGoogle(idToken: string) {
+    // const { email, name, googleId } = payload;
 
     try {
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID, // Ensure this matches your Google client ID
+      });
+  
+      const payload = ticket.getPayload();
+      if (!payload) {
+        throw new Error('Invalid Google token payload.');
+      }
+  
+      const { email, name, sub: googleId } = payload;
+
       // Kiểm tra xem người dùng đã tồn tại chưa
       let { data: user, error: fetchError } = await this.supabase
         .from('usersgg')
@@ -501,7 +518,7 @@ export class UserService {
 
       if (error) {
         console.error('Error deleting from watchlist:', error);
-        throw new Error('Đã xảy ra lỗi khi xóa phim khỏi danh sách theo dõi.');
+        throw new BadRequestException('Đã xảy ra lỗi khi xóa phim khỏi danh sách theo dõi.');
       }
 
       return { success: true };
@@ -589,7 +606,7 @@ export class UserService {
 
       if (insertError) {
         console.error('Error adding to favourite:', insertError);
-        throw new Error('Đã xảy ra lỗi khi thêm vào danh sách favourite.');
+        throw new BadRequestException('Đã xảy ra lỗi khi thêm vào danh sách favourite.');
       }
 
       return { success: true };

@@ -112,7 +112,7 @@ let UserService = class UserService {
             .insert([{ username: username, email: email, pass: hashedPassword }]);
         if (insertError) {
             console.error('Error inserting user:', insertError);
-            throw new Error('Đã xảy ra lỗi khi đăng ký người dùng.');
+            throw new common_1.BadRequestException('Đã xảy ra lỗi khi đăng ký người dùng.');
         }
         await this.verifyOtp(email, otp);
         return 'Đăng ký thành công!';
@@ -159,24 +159,41 @@ let UserService = class UserService {
         }
         return data;
     }
-    async findOne(email) {
-        const { data, error } = await this.supabase
-            .from('users')
-            .select('*')
-            .eq('email', email)
-            .single();
-        if (error) {
-            console.error('Error finding user:', error);
-            throw new common_1.NotFoundException('Không tìm thấy người dùng.');
-        }
-        return {
-            email: data.email,
-            username: data.username,
-        };
-    }
-    async loginWithGoogle(payload) {
-        const { email, name, googleId } = payload;
+    async findOne(email, isGoogleAccount) {
+        console.log(email, isGoogleAccount);
         try {
+            const tableName = isGoogleAccount ? 'usersgg' : 'users';
+            const { data, error } = await this.supabase
+                .from(tableName)
+                .select('*')
+                .eq('email', email)
+                .single();
+            if (error || !data) {
+                console.error('Error finding user:', error || 'User not found');
+                throw new common_1.NotFoundException('Không tìm thấy người dùng.');
+            }
+            return {
+                email: data.email,
+                username: data.username,
+                isGoogleAccount: isGoogleAccount,
+            };
+        }
+        catch (error) {
+            console.error('Unexpected error:', error);
+            throw new common_1.BadRequestException('Đã xảy ra lỗi khi tìm người dùng.');
+        }
+    }
+    async loginWithGoogle(idToken) {
+        try {
+            const ticket = await this.googleClient.verifyIdToken({
+                idToken,
+                audience: process.env.GOOGLE_CLIENT_ID,
+            });
+            const payload = ticket.getPayload();
+            if (!payload) {
+                throw new Error('Invalid Google token payload.');
+            }
+            const { email, name, sub: googleId } = payload;
             let { data: user, error: fetchError } = await this.supabase
                 .from('usersgg')
                 .select('*')
@@ -199,7 +216,9 @@ let UserService = class UserService {
                     throw new Error('Đã xảy ra lỗi khi lấy thông tin người dùng Google sau khi tạo.');
                 }
                 user = data;
+                console.log(user);
             }
+            console.log(user);
             const signpayload = { email, isGoogleAccount: true };
             const accessToken = this.jwtService.sign(signpayload, { expiresIn: '15m' });
             const refreshToken = this.jwtService.sign(signpayload, { expiresIn: '7d' });
@@ -399,7 +418,7 @@ let UserService = class UserService {
                 .eq('movieID', movieID);
             if (error) {
                 console.error('Error deleting from watchlist:', error);
-                throw new Error('Đã xảy ra lỗi khi xóa phim khỏi danh sách theo dõi.');
+                throw new common_1.BadRequestException('Đã xảy ra lỗi khi xóa phim khỏi danh sách theo dõi.');
             }
             return { success: true };
         }
@@ -475,7 +494,7 @@ let UserService = class UserService {
                 .insert([{ email: email, movieID: movieID }]);
             if (insertError) {
                 console.error('Error adding to favourite:', insertError);
-                throw new Error('Đã xảy ra lỗi khi thêm vào danh sách favourite.');
+                throw new common_1.BadRequestException('Đã xảy ra lỗi khi thêm vào danh sách favourite.');
             }
             return { success: true };
         }

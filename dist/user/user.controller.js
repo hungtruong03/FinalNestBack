@@ -43,31 +43,10 @@ let UserController = class UserController {
     }
     async loginWithGoogle(body) {
         const { token } = body;
-        const decodedToken = this.decodeGoogleToken(token);
-        if (!decodedToken) {
-            return {
-                status: 'error',
-                message: 'Token không hợp lệ hoặc không giải mã được.',
-            };
-        }
-        return this.userService.loginWithGoogle(decodedToken);
-    }
-    decodeGoogleToken(token) {
-        try {
-            const decoded = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-            return {
-                email: decoded.email,
-                name: decoded.name,
-                googleId: decoded.sub,
-            };
-        }
-        catch (error) {
-            console.error('Error decoding token:', error);
-            return null;
-        }
+        return this.userService.loginWithGoogle(token);
     }
     async getProfile(req) {
-        return await this.userService.findOne(req.email);
+        return await this.userService.findOne(req.email, req.isGoogleAccount);
     }
     async addRating(req, body, movieId) {
         const userId = req.email;

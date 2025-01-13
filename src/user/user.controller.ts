@@ -58,42 +58,42 @@ export class UserController {
   async loginWithGoogle(@Body() body: { token: string }) {
     const { token } = body;
 
-    // Giải mã token để lấy thông tin email, name, googleId
-    const decodedToken = this.decodeGoogleToken(token);
+    // // Giải mã token để lấy thông tin email, name, googleId
+    // const decodedToken = this.decodeGoogleToken(token);
 
-    if (!decodedToken) {
-      return {
-        status: 'error',
-        message: 'Token không hợp lệ hoặc không giải mã được.',
-      };
-    }
+    // if (!decodedToken) {
+    //   return {
+    //     status: 'error',
+    //     message: 'Token không hợp lệ hoặc không giải mã được.',
+    //   };
+    // }
 
     // Gọi service với thông tin đã giải mã
-    return this.userService.loginWithGoogle(decodedToken);
+    return this.userService.loginWithGoogle(token);
   }
 
-  private decodeGoogleToken(token: string): { email: string; name: string; googleId: string } | null {
-    try {
-      // Giải mã token (thay thế logic này bằng thư viện phù hợp nếu cần)
-      const decoded = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+  // private decodeGoogleToken(token: string): { email: string; name: string; googleId: string } | null {
+  //   try {
+  //     // Giải mã token (thay thế logic này bằng thư viện phù hợp nếu cần)
+  //     const decoded = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
 
-      // Trích xuất thông tin cần thiết
-      return {
-        email: decoded.email,
-        name: decoded.name,
-        googleId: decoded.sub, // `sub` thường là Google ID
-      };
-    } catch (error) {
-      console.error('Error decoding token:', error);
-      return null;
-    }
-  }
+  //     // Trích xuất thông tin cần thiết
+  //     return {
+  //       email: decoded.email,
+  //       name: decoded.name,
+  //       googleId: decoded.sub, // `sub` thường là Google ID
+  //     };
+  //   } catch (error) {
+  //     console.error('Error decoding token:', error);
+  //     return null;
+  //   }
+  // }
 
   @Public()
   @HttpCode(HttpStatus.OK)
   @Get('profile')
   async getProfile(@Request() req) {
-    return await this.userService.findOne(req.email);
+    return await this.userService.findOne(req.email, req.isGoogleAccount);
   }
 
   @HttpCode(HttpStatus.CREATED)
