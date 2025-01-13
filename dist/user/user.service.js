@@ -160,7 +160,6 @@ let UserService = class UserService {
         return data;
     }
     async findOne(email, isGoogleAccount) {
-        console.log(email, isGoogleAccount);
         try {
             const tableName = isGoogleAccount ? 'usersgg' : 'users';
             const { data, error } = await this.supabase
@@ -216,9 +215,7 @@ let UserService = class UserService {
                     throw new Error('Đã xảy ra lỗi khi lấy thông tin người dùng Google sau khi tạo.');
                 }
                 user = data;
-                console.log(user);
             }
-            console.log(user);
             const signpayload = { email, isGoogleAccount: true };
             const accessToken = this.jwtService.sign(signpayload, { expiresIn: '15m' });
             const refreshToken = this.jwtService.sign(signpayload, { expiresIn: '7d' });
