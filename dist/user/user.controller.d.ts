@@ -46,7 +46,6 @@ export declare class UserController {
         accessToken?: undefined;
         refreshToken?: undefined;
     }>;
-    private decodeGoogleToken;
     getProfile(req: any): Promise<any>;
     addRating(req: any, body: {
         rating: number;
@@ -78,4 +77,10 @@ export declare class UserController {
         success: boolean;
     }>;
     getRecommendations(req: any): Promise<any[]>;
+    getRatingList(req: any, page: string): Promise<{
+        movies: (import("../movie/movie.schema").Movie & {
+            userRating: number | null;
+        })[];
+        totalPages: number;
+    }>;
 }

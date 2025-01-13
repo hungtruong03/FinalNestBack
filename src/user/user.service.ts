@@ -21,8 +21,6 @@ export class UserService {
     @InjectModel(Movie.name, 'movie1Connection')
     private readonly movieModel1: Model<Movie>,
     @InjectModel(Similar.name, 'similarConnection') private readonly similarModel: Model<Similar>
-
-    
   ) { }
   private googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -127,7 +125,7 @@ export class UserService {
 
     if (insertError) {
       console.error('Error inserting user:', insertError); // In ra lỗi chi tiết
-      throw new Error('Đã xảy ra lỗi khi đăng ký người dùng.');
+      throw new BadRequestException('Đã xảy ra lỗi khi đăng ký người dùng.');
     }
 
     await this.verifyOtp(email, otp);
@@ -188,29 +186,48 @@ export class UserService {
     return data;
   }
 
-  async findOne(email: string): Promise<any> {
-    // Tìm người dùng theo ID
-    const { data, error } = await this.supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
-
-    if (error) {
-      console.error('Error finding user:', error); // In ra lỗi chi tiết
-      throw new NotFoundException('Không tìm thấy người dùng.');
+  async findOne(email: string, isGoogleAccount: boolean): Promise<any> {
+    try {
+      const tableName = isGoogleAccount ? 'usersgg' : 'users';
+  
+      const { data, error } = await this.supabase
+        .from(tableName)
+        .select('*')
+        .eq('email', email)
+        .single();
+  
+      if (error || !data) {
+        console.error('Error finding user:', error || 'User not found');
+        throw new NotFoundException('Không tìm thấy người dùng.');
+      }
+  
+      return {
+        email: data.email,
+        username: data.username,
+        isGoogleAccount: isGoogleAccount,
+      };
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      throw new BadRequestException('Đã xảy ra lỗi khi tìm người dùng.');
     }
-
-    return {
-      email: data.email,
-      username: data.username,
-    };
   }
 
-  async loginWithGoogle(payload: { email: string; name: string; googleId: string }) {
-    const { email, name, googleId } = payload;
+  async loginWithGoogle(idToken: string) {
+    // const { email, name, googleId } = payload;
 
     try {
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID, // Ensure this matches your Google client ID
+      });
+  
+      const payload = ticket.getPayload();
+      if (!payload) {
+        throw new Error('Invalid Google token payload.');
+      }
+  
+      const { email, name, sub: googleId } = payload;
+
       // Kiểm tra xem người dùng đã tồn tại chưa
       let { data: user, error: fetchError } = await this.supabase
         .from('usersgg')
@@ -347,14 +364,14 @@ export class UserService {
 
   async getUserRating(userId: number, movieId: number): Promise<number | null> {
     const { data: existingRating, error } = await this.supabase
-        .from('rating')
-        .select('point')
-        .eq('userID', userId)
-        .eq('movieID', movieId)
-        .single();
+      .from('rating')
+      .select('point')
+      .eq('userID', userId)
+      .eq('movieID', movieId)
+      .single();
 
     if (error || !existingRating) {
-        return null; // Không có đánh giá
+      return null; // Không có đánh giá
     }
 
     return existingRating.point; // Trả về điểm đánh giá
@@ -362,49 +379,49 @@ export class UserService {
 
   async addRating(userId: number, movieId: number, rating: number): Promise<{ vote_average: number; vote_count: number }> {
     if (rating < 1 || rating > 10) {
-        throw new BadRequestException('Điểm đánh giá phải từ 1 đến 10.');
+      throw new BadRequestException('Điểm đánh giá phải từ 1 đến 10.');
     }
 
     // Kiểm tra nếu user đã đánh giá phim
     const { data: existingRating } = await this.supabase
-        .from('rating')
-        .select('*')
-        .eq('userID', userId)
-        .eq('movieID', movieId)
-        .single();
+      .from('rating')
+      .select('*')
+      .eq('userID', userId)
+      .eq('movieID', movieId)
+      .single();
 
     const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).exec();
     const movie = movieFromDb1;
 
     if (!movie) {
-        throw new NotFoundException('Không tìm thấy phim.');
+      throw new NotFoundException('Không tìm thấy phim.');
     }
 
     // Nếu đã có đánh giá
     if (existingRating) {
-        const oldRating = existingRating.point;
+      const oldRating = existingRating.point;
 
-        // Loại bỏ điểm cũ và thêm điểm mới
-        const adjustedVoteAverage =
-            ((movie.vote_average * movie.vote_count) - oldRating + rating) / movie.vote_count;
+      // Loại bỏ điểm cũ và thêm điểm mới
+      const adjustedVoteAverage =
+        ((movie.vote_average * movie.vote_count) - oldRating + rating) / movie.vote_count;
 
-        movie.vote_average = adjustedVoteAverage;
-        await movie.save();
+      movie.vote_average = adjustedVoteAverage;
+      await movie.save();
 
-        // Cập nhật điểm mới trong Supabase
-        await this.supabase
-            .from('rating')
-            .update({ point: rating, date: new Date() })
-            .eq('userID', userId)
-            .eq('movieID', movieId);
+      // Cập nhật điểm mới trong Supabase
+      await this.supabase
+        .from('rating')
+        .update({ point: rating, date: new Date() })
+        .eq('userID', userId)
+        .eq('movieID', movieId);
 
-        return { vote_average: movie.vote_average, vote_count: movie.vote_count };
+      return { vote_average: movie.vote_average, vote_count: movie.vote_count };
     }
 
     // Nếu chưa có đánh giá, thêm mới
     const newVoteCount = movie.vote_count + 1;
     const newVoteAverage =
-        ((movie.vote_average * movie.vote_count) + rating) / newVoteCount;
+      ((movie.vote_average * movie.vote_count) + rating) / newVoteCount;
 
     movie.vote_average = newVoteAverage;
     movie.vote_count = newVoteCount;
@@ -412,8 +429,8 @@ export class UserService {
 
     // Thêm đánh giá vào Supabase
     await this.supabase
-        .from('rating')
-        .insert([{ userID: userId, movieID: movieId, point: rating, date: new Date() }]);
+      .from('rating')
+      .insert([{ userID: userId, movieID: movieId, point: rating, date: new Date() }]);
 
     return { vote_average: movie.vote_average, vote_count: movie.vote_count };
   }
@@ -450,7 +467,7 @@ export class UserService {
     }
   }
 
-  async getWatchList(email: string,page:number): Promise<{ movies: Movie[]; totalPages: number }> {
+  async getWatchList(email: string, page: number): Promise<{ movies: Movie[]; totalPages: number }> {
     try {
       // Lấy danh sách movieID từ Supabase
       const { data: watchList, error } = await this.supabase
@@ -466,25 +483,25 @@ export class UserService {
       if (!watchList || watchList.length === 0) {
         throw new NotFoundException('Danh sách xem trống.');
       }
-      const skip = (page-1)*12;
+      const skip = (page - 1) * 12;
       const totalPages = Math.ceil(watchList.length / 12);
 
-    // Lấy danh sách movieID cho trang hiện tại
-    const paginatedWatchList = watchList.slice(skip, skip + 12);
+      // Lấy danh sách movieID cho trang hiện tại
+      const paginatedWatchList = watchList.slice(skip, skip + 12);
 
-    // Tìm thông tin chi tiết từng phim trong MongoDB
-    const moviePromises = paginatedWatchList.map(async (item) => {
-      const movieId = item.movieID;
+      // Tìm thông tin chi tiết từng phim trong MongoDB
+      const moviePromises = paginatedWatchList.map(async (item) => {
+        const movieId = item.movieID;
 
-      const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).exec();
-      if (movieFromDb1) return movieFromDb1;
+        const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).exec();
+        if (movieFromDb1) return movieFromDb1;
 
-      throw new NotFoundException(`Không tìm thấy phim với ID: ${movieId}`);
-    });
+        throw new NotFoundException(`Không tìm thấy phim với ID: ${movieId}`);
+      });
 
-    const movies = await Promise.all(moviePromises);
+      const movies = await Promise.all(moviePromises);
 
-    return { movies, totalPages };
+      return { movies, totalPages };
     } catch (error) {
       console.error('Error in getWatchList:', error.message || error);
       throw new NotFoundException('Có lỗi xảy ra khi lấy danh sách xem.');
@@ -501,7 +518,7 @@ export class UserService {
 
       if (error) {
         console.error('Error deleting from watchlist:', error);
-        throw new Error('Đã xảy ra lỗi khi xóa phim khỏi danh sách theo dõi.');
+        throw new BadRequestException('Đã xảy ra lỗi khi xóa phim khỏi danh sách theo dõi.');
       }
 
       return { success: true };
@@ -510,7 +527,7 @@ export class UserService {
       throw error;
     }
   }
-  async getFavourite(email: string,page:number): Promise<{ movies: Movie[]; totalPages: number }> {
+  async getFavourite(email: string, page: number): Promise<{ movies: Movie[]; totalPages: number }> {
     try {
       const { data: favourite, error } = await this.supabase
         .from('favourite')
@@ -525,23 +542,23 @@ export class UserService {
       if (!favourite || favourite.length === 0) {
         throw new NotFoundException('Danh sách xem trống.');
       }
-      const skip = (page-1)*12;
+      const skip = (page - 1) * 12;
       const totalPages = Math.ceil(favourite.length / 12);
 
-    const paginatedWatchList = favourite.slice(skip, skip + 12);
+      const paginatedWatchList = favourite.slice(skip, skip + 12);
 
-    const moviePromises = paginatedWatchList.map(async (item) => {
-      const movieId = item.movieID;
+      const moviePromises = paginatedWatchList.map(async (item) => {
+        const movieId = item.movieID;
 
-      const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).exec();
-      if (movieFromDb1) return movieFromDb1;
+        const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).exec();
+        if (movieFromDb1) return movieFromDb1;
 
-      throw new NotFoundException(`Không tìm thấy phim với ID: ${movieId}`);
-    });
+        throw new NotFoundException(`Không tìm thấy phim với ID: ${movieId}`);
+      });
 
-    const movies = await Promise.all(moviePromises);
+      const movies = await Promise.all(moviePromises);
 
-    return { movies, totalPages };
+      return { movies, totalPages };
     } catch (error) {
       console.error('Error in favourite:', error.message || error);
       throw new NotFoundException('Có lỗi xảy ra khi lấy danh sách xem.');
@@ -589,7 +606,7 @@ export class UserService {
 
       if (insertError) {
         console.error('Error adding to favourite:', insertError);
-        throw new Error('Đã xảy ra lỗi khi thêm vào danh sách favourite.');
+        throw new BadRequestException('Đã xảy ra lỗi khi thêm vào danh sách favourite.');
       }
 
       return { success: true };
@@ -603,13 +620,13 @@ export class UserService {
     // Lấy toàn bộ danh sách watchlist
     const watchlistMovies = await this.getAllWatchList(email);
     // console.log(watchlistMovies);
-  
+
     if (!watchlistMovies.length) {
       throw new NotFoundException('Watchlist trống, không thể tạo recommendation.');
     }
-  
+
     const recommendations = [];
-  
+
     for (const movie of watchlistMovies) {
       // Tìm phim tương tự từ collection `similar`
       const similarData = await this.similarModel.findOne({ tmdb_id: movie.tmdb_id }).exec();
@@ -617,38 +634,38 @@ export class UserService {
         recommendations.push(...similarData.similar_movies);
       }
     }
-  
+
     // Loại bỏ trùng lặp dựa trên `id`
     const uniqueRecommendations = Array.from(
       new Set(recommendations.map((movie) => movie.id))
     ).map((id) => recommendations.find((movie) => movie.id === id));
 
     // console.log(uniqueRecommendations.slice(0, 20));
-  
+
     return uniqueRecommendations.slice(0, 20); // Trả về tối đa 20 phim
   }
-  
+
   async getAllWatchList(email: string): Promise<Movie[]> {
     const { data: watchList, error } = await this.supabase
-        .from('watchlist')
-        .select('movieID')
-        .eq('email', email);
+      .from('watchlist')
+      .select('movieID')
+      .eq('email', email);
 
     if (error) {
-        console.error('Error fetching watchlist:', error);
-        throw new Error('Failed to fetch watchlist.');
+      console.error('Error fetching watchlist:', error);
+      throw new Error('Failed to fetch watchlist.');
     }
 
     if (!watchList || watchList.length === 0) {
-        return []; // Trả về mảng rỗng nếu không có phim
+      return []; // Trả về mảng rỗng nếu không có phim
     }
 
     // Lấy thông tin chi tiết phim từ MongoDB
     const movies = await Promise.all(
-        watchList.map(async (item) => {
-            const movie = await this.movieModel1.findOne({ tmdb_id: item.movieID }).exec();
-            return movie;
-        })
+      watchList.map(async (item) => {
+        const movie = await this.movieModel1.findOne({ tmdb_id: item.movieID }).exec();
+        return movie;
+      })
     );
 
     return movies.filter(Boolean); // Loại bỏ các giá trị null (nếu có)
@@ -656,25 +673,25 @@ export class UserService {
 
   async getAllFavouriteList(email: string): Promise<Movie[]> {
     const { data: favouriteList, error } = await this.supabase
-        .from('favourite')
-        .select('movieID')
-        .eq('email', email);
+      .from('favourite')
+      .select('movieID')
+      .eq('email', email);
 
     if (error) {
-        console.error('Error fetching favourite list:', error);
-        throw new Error('Failed to fetch favourite list.');
+      console.error('Error fetching favourite list:', error);
+      throw new Error('Failed to fetch favourite list.');
     }
 
     if (!favouriteList || favouriteList.length === 0) {
-        return []; // Trả về mảng rỗng nếu không có phim
+      return []; // Trả về mảng rỗng nếu không có phim
     }
 
     // Lấy thông tin chi tiết phim từ MongoDB
     const movies = await Promise.all(
-        favouriteList.map(async (item) => {
-            const movie = await this.movieModel1.findOne({ tmdb_id: item.movieID }).exec();
-            return movie;
-        })
+      favouriteList.map(async (item) => {
+        const movie = await this.movieModel1.findOne({ tmdb_id: item.movieID }).exec();
+        return movie;
+      })
     );
 
     return movies.filter(Boolean); // Loại bỏ các giá trị null (nếu có)
@@ -686,15 +703,64 @@ export class UserService {
 
     // Kết hợp và loại bỏ trùng lặp dựa trên `tmdb_id`
     const combinedMovies = [
-        ...new Map(
-            [...watchList, ...favouriteList].map((movie) => [movie.tmdb_id, movie])
-        ).values(),
+      ...new Map(
+        [...watchList, ...favouriteList].map((movie) => [movie.tmdb_id, movie])
+      ).values(),
     ];
 
     return combinedMovies;
   }
+  async getRating(
+    email: string,
+    page: number
+  ): Promise<{ movies: (Movie & { userRating: number | null })[]; totalPages: number }> {
+    try {
+      // Lấy danh sách movieID từ Supabase
+      const { data: rating, error } = await this.supabase
+        .from('rating')
+        .select('movieID, point')
+        .eq('userID', email);
 
-  
+      if (error) {
+        console.error('Error fetching watch list from Supabase:', error);
+        throw new NotFoundException('Không tìm thấy danh sách xem.');
+      }
 
-  
+      if (!rating || rating.length === 0) {
+        throw new NotFoundException('Danh sách xem trống.');
+      }
+
+      const skip = (page - 1) * 12;
+      const totalPages = Math.ceil(rating.length / 12);
+
+      // Lấy danh sách movieID cho trang hiện tại
+      const paginatedRating = rating.slice(skip, skip + 12);
+
+      // Tìm thông tin chi tiết từng phim trong MongoDB kèm theo điểm đánh giá
+      const moviePromises = paginatedRating.map(async (item) => {
+        const movieId = item.movieID;
+        const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).lean().exec();
+
+        if (movieFromDb1) {
+          return {
+            ...movieFromDb1, // Đã loại bỏ các thuộc tính Mongoose
+            userRating: item.point ?? 0, // Nếu không có điểm, gán giá trị mặc định là 0
+          } as unknown as Movie & { userRating: number };
+        }
+
+        throw new NotFoundException(`Không tìm thấy phim với ID: ${movieId}`);
+      });
+
+      const movies = await Promise.all(moviePromises);
+
+      return { movies, totalPages };
+    } catch (error) {
+      console.error('Error in getWatchList:', error.message || error);
+      throw new NotFoundException('Có lỗi xảy ra khi lấy danh sách xem.');
+    }
+  }
+
+
+
+
 }

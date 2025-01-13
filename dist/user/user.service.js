@@ -112,7 +112,7 @@ let UserService = class UserService {
             .insert([{ username: username, email: email, pass: hashedPassword }]);
         if (insertError) {
             console.error('Error inserting user:', insertError);
-            throw new Error('Đã xảy ra lỗi khi đăng ký người dùng.');
+            throw new common_1.BadRequestException('Đã xảy ra lỗi khi đăng ký người dùng.');
         }
         await this.verifyOtp(email, otp);
         return 'Đăng ký thành công!';
@@ -159,24 +159,40 @@ let UserService = class UserService {
         }
         return data;
     }
-    async findOne(email) {
-        const { data, error } = await this.supabase
-            .from('users')
-            .select('*')
-            .eq('email', email)
-            .single();
-        if (error) {
-            console.error('Error finding user:', error);
-            throw new common_1.NotFoundException('Không tìm thấy người dùng.');
-        }
-        return {
-            email: data.email,
-            username: data.username,
-        };
-    }
-    async loginWithGoogle(payload) {
-        const { email, name, googleId } = payload;
+    async findOne(email, isGoogleAccount) {
         try {
+            const tableName = isGoogleAccount ? 'usersgg' : 'users';
+            const { data, error } = await this.supabase
+                .from(tableName)
+                .select('*')
+                .eq('email', email)
+                .single();
+            if (error || !data) {
+                console.error('Error finding user:', error || 'User not found');
+                throw new common_1.NotFoundException('Không tìm thấy người dùng.');
+            }
+            return {
+                email: data.email,
+                username: data.username,
+                isGoogleAccount: isGoogleAccount,
+            };
+        }
+        catch (error) {
+            console.error('Unexpected error:', error);
+            throw new common_1.BadRequestException('Đã xảy ra lỗi khi tìm người dùng.');
+        }
+    }
+    async loginWithGoogle(idToken) {
+        try {
+            const ticket = await this.googleClient.verifyIdToken({
+                idToken,
+                audience: process.env.GOOGLE_CLIENT_ID,
+            });
+            const payload = ticket.getPayload();
+            if (!payload) {
+                throw new Error('Invalid Google token payload.');
+            }
+            const { email, name, sub: googleId } = payload;
             let { data: user, error: fetchError } = await this.supabase
                 .from('usersgg')
                 .select('*')
@@ -399,7 +415,7 @@ let UserService = class UserService {
                 .eq('movieID', movieID);
             if (error) {
                 console.error('Error deleting from watchlist:', error);
-                throw new Error('Đã xảy ra lỗi khi xóa phim khỏi danh sách theo dõi.');
+                throw new common_1.BadRequestException('Đã xảy ra lỗi khi xóa phim khỏi danh sách theo dõi.');
             }
             return { success: true };
         }
@@ -475,7 +491,7 @@ let UserService = class UserService {
                 .insert([{ email: email, movieID: movieID }]);
             if (insertError) {
                 console.error('Error adding to favourite:', insertError);
-                throw new Error('Đã xảy ra lỗi khi thêm vào danh sách favourite.');
+                throw new common_1.BadRequestException('Đã xảy ra lỗi khi thêm vào danh sách favourite.');
             }
             return { success: true };
         }
@@ -542,6 +558,41 @@ let UserService = class UserService {
             ...new Map([...watchList, ...favouriteList].map((movie) => [movie.tmdb_id, movie])).values(),
         ];
         return combinedMovies;
+    }
+    async getRating(email, page) {
+        try {
+            const { data: rating, error } = await this.supabase
+                .from('rating')
+                .select('movieID, point')
+                .eq('userID', email);
+            if (error) {
+                console.error('Error fetching watch list from Supabase:', error);
+                throw new common_1.NotFoundException('Không tìm thấy danh sách xem.');
+            }
+            if (!rating || rating.length === 0) {
+                throw new common_1.NotFoundException('Danh sách xem trống.');
+            }
+            const skip = (page - 1) * 12;
+            const totalPages = Math.ceil(rating.length / 12);
+            const paginatedRating = rating.slice(skip, skip + 12);
+            const moviePromises = paginatedRating.map(async (item) => {
+                const movieId = item.movieID;
+                const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).lean().exec();
+                if (movieFromDb1) {
+                    return {
+                        ...movieFromDb1,
+                        userRating: item.point ?? 0,
+                    };
+                }
+                throw new common_1.NotFoundException(`Không tìm thấy phim với ID: ${movieId}`);
+            });
+            const movies = await Promise.all(moviePromises);
+            return { movies, totalPages };
+        }
+        catch (error) {
+            console.error('Error in getWatchList:', error.message || error);
+            throw new common_1.NotFoundException('Có lỗi xảy ra khi lấy danh sách xem.');
+        }
     }
 };
 exports.UserService = UserService;

@@ -26,12 +26,8 @@ export declare class UserService {
         accessToken: string;
     }>;
     validateUser(userId: number): Promise<any>;
-    findOne(email: string): Promise<any>;
-    loginWithGoogle(payload: {
-        email: string;
-        name: string;
-        googleId: string;
-    }): Promise<{
+    findOne(email: string, isGoogleAccount: boolean): Promise<any>;
+    loginWithGoogle(idToken: string): Promise<{
         accessToken: string;
         refreshToken: string;
         status?: undefined;
@@ -81,4 +77,10 @@ export declare class UserService {
     getAllWatchList(email: string): Promise<Movie[]>;
     getAllFavouriteList(email: string): Promise<Movie[]>;
     getCombinedMovies(email: string): Promise<Movie[]>;
+    getRating(email: string, page: number): Promise<{
+        movies: (Movie & {
+            userRating: number | null;
+        })[];
+        totalPages: number;
+    }>;
 }

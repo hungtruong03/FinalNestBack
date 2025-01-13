@@ -27,7 +27,11 @@ let RecommendationService = class RecommendationService {
         this.userService = userService;
         this.movieVectorService = movieVectorService;
     }
+<<<<<<< HEAD
     async recommendMovies(userId, topN = 5) {
+=======
+    async recommendMovies(userId, topN = 10) {
+>>>>>>> adb55da8d4c2a133ddf740dc42241e37832f6c1a
         const userMovies = await this.userService.getCombinedMovies(userId);
         const userVectors = await Promise.all(userMovies.map((movie) => this.movieVectorService.getMovieVector(movie.tmdb_id)));
         const allMovieVectors = await this.movieVectorModel.find().limit(200).exec();
