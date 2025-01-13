@@ -81,4 +81,10 @@ export declare class UserService {
     getAllWatchList(email: string): Promise<Movie[]>;
     getAllFavouriteList(email: string): Promise<Movie[]>;
     getCombinedMovies(email: string): Promise<Movie[]>;
+    getRating(email: string, page: number): Promise<{
+        movies: (Movie & {
+            userRating: number | null;
+        })[];
+        totalPages: number;
+    }>;
 }

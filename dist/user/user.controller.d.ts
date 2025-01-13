@@ -78,4 +78,10 @@ export declare class UserController {
         success: boolean;
     }>;
     getRecommendations(req: any): Promise<any[]>;
+    getRatingList(req: any, page: string): Promise<{
+        movies: (import("../movie/movie.schema").Movie & {
+            userRating: number | null;
+        })[];
+        totalPages: number;
+    }>;
 }

@@ -169,5 +169,10 @@ export class UserController {
     const email = req.email;
     return await this.userService.getRecommendations(email);
   }
-
+  @Get('rating/list')
+  async getRatingList(@Request() req, @Query('page') page: string,) {
+    const email = req.email;
+    const pageNumber = parseInt(page, 10) || 1;
+    return this.userService.getRating(email, pageNumber);
+  }
 }

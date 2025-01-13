@@ -23,7 +23,7 @@ let UserModule = class UserModule {
     configure(consumer) {
         consumer
             .apply(jwt_middleware_1.JwtMiddleware)
-            .forRoutes('user/rate/:movieId', 'user/watchlist', 'user/favourite', 'user/profile', 'user/recommendations', 'recommendation/vector');
+            .forRoutes('user/rate/:movieId', 'user/watchlist', 'user/favourite', 'user/profile', 'user/recommendations', 'recommendation/vector', 'user/rating/list');
     }
 };
 exports.UserModule = UserModule;

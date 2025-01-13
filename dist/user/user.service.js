@@ -543,6 +543,41 @@ let UserService = class UserService {
         ];
         return combinedMovies;
     }
+    async getRating(email, page) {
+        try {
+            const { data: rating, error } = await this.supabase
+                .from('rating')
+                .select('movieID, point')
+                .eq('userID', email);
+            if (error) {
+                console.error('Error fetching watch list from Supabase:', error);
+                throw new common_1.NotFoundException('Không tìm thấy danh sách xem.');
+            }
+            if (!rating || rating.length === 0) {
+                throw new common_1.NotFoundException('Danh sách xem trống.');
+            }
+            const skip = (page - 1) * 12;
+            const totalPages = Math.ceil(rating.length / 12);
+            const paginatedRating = rating.slice(skip, skip + 12);
+            const moviePromises = paginatedRating.map(async (item) => {
+                const movieId = item.movieID;
+                const movieFromDb1 = await this.movieModel1.findOne({ tmdb_id: movieId }).lean().exec();
+                if (movieFromDb1) {
+                    return {
+                        ...movieFromDb1,
+                        userRating: item.point ?? 0,
+                    };
+                }
+                throw new common_1.NotFoundException(`Không tìm thấy phim với ID: ${movieId}`);
+            });
+            const movies = await Promise.all(moviePromises);
+            return { movies, totalPages };
+        }
+        catch (error) {
+            console.error('Error in getWatchList:', error.message || error);
+            throw new common_1.NotFoundException('Có lỗi xảy ra khi lấy danh sách xem.');
+        }
+    }
 };
 exports.UserService = UserService;
 exports.UserService = UserService = __decorate([
