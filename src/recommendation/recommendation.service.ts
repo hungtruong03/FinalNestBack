@@ -18,8 +18,8 @@ export class RecommendationService {
 
   async recommendMovies(userId: string, topN: number = 5): Promise<Movie[]> {
     // Lấy danh sách phim từ watchlist và favorite
-    const userMovies = await this.userService.getCombinedMovies(userId); // Lấy watchlist và favorite
-    const userMovieIds = new Set(userMovies.map((movie) => movie.tmdb_id)); // Tạo Set các tmdb_id để loại bỏ trùng lặp
+    const userMovies = await this.userService.getCombinedMovies(userId);
+    const userMovieIds = new Set(userMovies.map((movie) => movie.tmdb_id));
   
     // Lấy vector của các phim từ watchlist và favorite
     const userVectors = await Promise.all(

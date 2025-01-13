@@ -27,15 +27,14 @@ let RecommendationService = class RecommendationService {
         this.userService = userService;
         this.movieVectorService = movieVectorService;
     }
-<<<<<<< HEAD
     async recommendMovies(userId, topN = 5) {
-=======
-    async recommendMovies(userId, topN = 10) {
->>>>>>> adb55da8d4c2a133ddf740dc42241e37832f6c1a
         const userMovies = await this.userService.getCombinedMovies(userId);
+        const userMovieIds = new Set(userMovies.map((movie) => movie.tmdb_id));
         const userVectors = await Promise.all(userMovies.map((movie) => this.movieVectorService.getMovieVector(movie.tmdb_id)));
-        const allMovieVectors = await this.movieVectorModel.find().limit(200).exec();
-        const recommendations = allMovieVectors.map((vectorDoc) => {
+        const allMovieVectors = await this.movieVectorModel.find().exec();
+        const recommendations = allMovieVectors
+            .filter((vectorDoc) => !userMovieIds.has(vectorDoc.tmdb_id))
+            .map((vectorDoc) => {
             const similarity = userVectors.reduce((maxSim, userVector) => Math.max(maxSim, this.calculateCosineSimilarity(userVector, vectorDoc.vector)), 0);
             return { movieId: vectorDoc.tmdb_id, similarity };
         });
