@@ -16,36 +16,44 @@ export class RecommendationService {
     private readonly movieVectorService: MovieVectorService,
   ) {}
 
-  async recommendMovies(userId: string, topN: number = 10): Promise<Movie[]> {
+  async recommendMovies(userId: string, topN: number = 5): Promise<Movie[]> {
+    // Lấy danh sách phim từ watchlist và favorite
     const userMovies = await this.userService.getCombinedMovies(userId); // Lấy watchlist và favorite
+    const userMovieIds = new Set(userMovies.map((movie) => movie.tmdb_id)); // Tạo Set các tmdb_id để loại bỏ trùng lặp
+  
+    // Lấy vector của các phim từ watchlist và favorite
     const userVectors = await Promise.all(
-        userMovies.map((movie) => this.movieVectorService.getMovieVector(movie.tmdb_id)) // Truy xuất vector
+      userMovies.map((movie) => this.movieVectorService.getMovieVector(movie.tmdb_id))
     );
-
-    const allMovieVectors = await this.movieVectorModel.find().exec(); // Lấy toàn bộ vector
-    const recommendations = allMovieVectors.map((vectorDoc) => {
+  
+    // Lấy toàn bộ vector từ cơ sở dữ liệu
+    const allMovieVectors = await this.movieVectorModel.find().exec();
+  
+    // Tính toán độ tương đồng, bỏ qua các phim trong watchlist và favorite
+    const recommendations = allMovieVectors
+      .filter((vectorDoc) => !userMovieIds.has(vectorDoc.tmdb_id)) // Loại bỏ phim trong watchlist và favorite
+      .map((vectorDoc) => {
         const similarity = userVectors.reduce(
-            (maxSim, userVector) =>
-                Math.max(maxSim, this.calculateCosineSimilarity(userVector, vectorDoc.vector)),
-            0
+          (maxSim, userVector) =>
+            Math.max(maxSim, this.calculateCosineSimilarity(userVector, vectorDoc.vector)),
+          0
         );
         return { movieId: vectorDoc.tmdb_id, similarity };
-    });
-
+      });
+  
     // Sắp xếp theo độ tương đồng và lấy top N
     const topRecommendations = recommendations
-        .sort((a, b) => b.similarity - a.similarity)
-        .slice(0, topN);
-
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, topN);
+  
     // Truy xuất chi tiết phim
     const movieDetails = await Promise.all(
-        topRecommendations.map((rec) => this.movieModel.findOne({ tmdb_id: rec.movieId }).exec())
+      topRecommendations.map((rec) => this.movieModel.findOne({ tmdb_id: rec.movieId }).exec())
     );
-
-    // console.log(movieDetails);
-
+  
+    // Loại bỏ các giá trị null
     return movieDetails.filter(Boolean);
-  }
+  }  
 
   private calculateCosineSimilarity(vec1: number[], vec2: number[]): number {
       const dotProduct = vec1.reduce((sum, val, i) => sum + val * vec2[i], 0);

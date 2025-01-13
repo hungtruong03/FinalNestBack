@@ -27,10 +27,10 @@ let RecommendationService = class RecommendationService {
         this.userService = userService;
         this.movieVectorService = movieVectorService;
     }
-    async recommendMovies(userId, topN = 15) {
+    async recommendMovies(userId, topN = 5) {
         const userMovies = await this.userService.getCombinedMovies(userId);
         const userVectors = await Promise.all(userMovies.map((movie) => this.movieVectorService.getMovieVector(movie.tmdb_id)));
-        const allMovieVectors = await this.movieVectorModel.find().exec();
+        const allMovieVectors = await this.movieVectorModel.find().limit(200).exec();
         const recommendations = allMovieVectors.map((vectorDoc) => {
             const similarity = userVectors.reduce((maxSim, userVector) => Math.max(maxSim, this.calculateCosineSimilarity(userVector, vectorDoc.vector)), 0);
             return { movieId: vectorDoc.tmdb_id, similarity };
