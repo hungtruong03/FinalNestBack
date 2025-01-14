@@ -620,14 +620,22 @@ export class UserService {
     // Lấy toàn bộ danh sách watchlist
     const watchlistMovies = await this.getAllWatchList(email);
     // console.log(watchlistMovies);
+    const favouriteList = await this.getAllFavouriteList(email); // Lấy danh sách favourite
 
-    if (!watchlistMovies.length) {
+    // Kết hợp và loại bỏ trùng lặp dựa trên `tmdb_id`
+    const combinedMovies = [
+      ...new Map(
+        [...watchlistMovies, ...favouriteList].map((movie) => [movie.tmdb_id, movie])
+      ).values(),
+    ];
+
+    if (!combinedMovies.length) {
       throw new NotFoundException('Watchlist trống, không thể tạo recommendation.');
     }
 
     const recommendations = [];
 
-    for (const movie of watchlistMovies) {
+    for (const movie of combinedMovies) {
       // Tìm phim tương tự từ collection `similar`
       const similarData = await this.similarModel.findOne({ tmdb_id: movie.tmdb_id }).exec();
       if (similarData && similarData.similar_movies) {
