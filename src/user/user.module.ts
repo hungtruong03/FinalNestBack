@@ -16,7 +16,7 @@ import { ConfigModule } from '@nestjs/config';
   imports: [
     JwtModule.register({
       secret: process.env.JWT_SECRET||'SECRET_KEY',
-      signOptions: { expiresIn: '5h' },
+      signOptions: { expiresIn: '1h' },
     }),
     MongooseModule.forFeature(
       [{ name: Movie.name, schema: MovieSchema }],

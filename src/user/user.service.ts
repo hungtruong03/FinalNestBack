@@ -260,7 +260,7 @@ export class UserService {
         user = data;
       }
       const signpayload = { email, isGoogleAccount: true };
-      const accessToken = this.jwtService.sign(signpayload, { expiresIn: '15m' });
+      const accessToken = this.jwtService.sign(signpayload, { expiresIn: '1h' });
       const refreshToken = this.jwtService.sign(signpayload, { expiresIn: '7d' });
 
       // Trả về thông tin người dùng
