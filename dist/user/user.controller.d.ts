@@ -47,6 +47,17 @@ export declare class UserController {
         refreshToken?: undefined;
     }>;
     getProfile(req: any): Promise<any>;
+    updateAvatar(req: any, body: {
+        imageUrl: string;
+    }): Promise<{
+        success: boolean;
+    }>;
+    changePassword(req: any, body: {
+        oldPassword: string;
+        newPassword: string;
+    }): Promise<{
+        success: boolean;
+    }>;
     addRating(req: any, body: {
         rating: number;
     }, movieId: number): Promise<{

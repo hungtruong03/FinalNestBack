@@ -48,6 +48,16 @@ let UserController = class UserController {
     async getProfile(req) {
         return await this.userService.findOne(req.email, req.isGoogleAccount);
     }
+    async updateAvatar(req, body) {
+        const email = req.email;
+        const { imageUrl } = body;
+        return this.userService.updateAvatar(email, imageUrl);
+    }
+    async changePassword(req, body) {
+        const email = req.email;
+        const { oldPassword, newPassword } = body;
+        return this.userService.changePassword(email, oldPassword, newPassword);
+    }
     async addRating(req, body, movieId) {
         const userId = req.email;
         const { rating } = body;
@@ -178,6 +188,26 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "getProfile", null);
+__decorate([
+    (0, setMetaData_1.Public)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, common_1.Post)('updateAvatar'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "updateAvatar", null);
+__decorate([
+    (0, setMetaData_1.Public)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, common_1.Post)('changePassword'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "changePassword", null);
 __decorate([
     (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
     (0, common_1.Post)('rate/:movieId'),

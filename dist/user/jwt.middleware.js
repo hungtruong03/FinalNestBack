@@ -29,7 +29,6 @@ let JwtMiddleware = class JwtMiddleware {
             const decoded = this.jwtService.verify(token);
             req['email'] = decoded.email;
             req['isGoogleAccount'] = decoded.isGoogleAccount;
-            console.log(decoded);
             next();
         }
         catch (error) {

@@ -96,6 +96,24 @@ export class UserController {
     return await this.userService.findOne(req.email, req.isGoogleAccount);
   }
 
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Post('updateAvatar')
+  async updateAvatar(@Request() req, @Body() body: { imageUrl: string }, ): Promise<{ success: boolean }> {
+    const email = req.email;
+    const { imageUrl } = body;
+    return this.userService.updateAvatar(email, imageUrl);
+  }
+
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Post('changePassword')
+  async changePassword(@Request() req, @Body() body: { oldPassword: string; newPassword: string }, ): Promise<{ success: boolean }> {
+    const email = req.email;
+    const { oldPassword, newPassword } = body;
+    return this.userService.changePassword(email, oldPassword, newPassword);
+  }
+
   @HttpCode(HttpStatus.CREATED)
   @Post('rate/:movieId')
   async addRating(@Request() req, @Body() body: { rating: number }, @Param('movieId') movieId: number) {
@@ -106,12 +124,12 @@ export class UserController {
 
   @Get('rate/:movieId')
   async getUserRating(@Request() req, @Param('movieId') movieId: number) {
-      const userId = req.email;
-      console.log(userId);
-      return this.userService.getUserRating(userId, movieId);
+    const userId = req.email;
+    console.log(userId);
+    return this.userService.getUserRating(userId, movieId);
   }
 
-  
+
   @HttpCode(HttpStatus.CREATED)
   @Post('watchlist/:movieId')
   async addWatchList(@Request() req, @Param('movieId') movieId: number) {

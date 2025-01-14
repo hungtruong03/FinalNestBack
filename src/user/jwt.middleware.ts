@@ -25,8 +25,6 @@ export class JwtMiddleware implements NestMiddleware {
         req['email'] = decoded.email;
         req['isGoogleAccount'] = decoded.isGoogleAccount;
 
-        console.log(decoded);
-
         next();
     } catch (error) {
         console.log(error)

@@ -48,6 +48,12 @@ export declare class UserService {
         success: boolean;
     }>;
     private updateUserPassword;
+    updateAvatar(email: string, imageUrl: string): Promise<{
+        success: boolean;
+    }>;
+    changePassword(email: string, oldPassword: string, newPassword: string): Promise<{
+        success: boolean;
+    }>;
     getUserRating(userId: number, movieId: number): Promise<number | null>;
     addRating(userId: number, movieId: number, rating: number): Promise<{
         vote_average: number;

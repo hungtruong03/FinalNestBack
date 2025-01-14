@@ -189,22 +189,25 @@ export class UserService {
   async findOne(email: string, isGoogleAccount: boolean): Promise<any> {
     try {
       const tableName = isGoogleAccount ? 'usersgg' : 'users';
-  
+
       const { data, error } = await this.supabase
         .from(tableName)
         .select('*')
         .eq('email', email)
         .single();
-  
+
       if (error || !data) {
         console.error('Error finding user:', error || 'User not found');
         throw new NotFoundException('Không tìm thấy người dùng.');
       }
-  
+
+      console.log('Found user:', data);
+
       return {
         email: data.email,
         username: data.username,
         isGoogleAccount: isGoogleAccount,
+        image: data.image
       };
     } catch (error) {
       console.error('Unexpected error:', error);
@@ -220,12 +223,12 @@ export class UserService {
         idToken,
         audience: process.env.GOOGLE_CLIENT_ID, // Ensure this matches your Google client ID
       });
-  
+
       const payload = ticket.getPayload();
       if (!payload) {
         throw new Error('Invalid Google token payload.');
       }
-  
+
       const { email, name, sub: googleId } = payload;
 
       // Kiểm tra xem người dùng đã tồn tại chưa
@@ -360,6 +363,65 @@ export class UserService {
 
     return true;
 
+  }
+
+  async updateAvatar(email: string, imageUrl: string): Promise<{ success: boolean }> {
+    try {
+      // Cập nhật avatar cho người dùng trong Supabase
+      const { error } = await this.supabase
+        .from('users')
+        .update({ image: imageUrl })
+        .eq('email', email);
+
+      if (error) {
+        console.error('Error updating avatar:', error);
+        throw new BadRequestException('Có lỗi xảy ra khi cập nhật avatar.');
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Unexpected error updating avatar:', error);
+      throw new BadRequestException('Đã xảy ra lỗi không mong muốn khi cập nhật avatar.');
+    }
+  }
+
+  async changePassword(email: string, oldPassword: string, newPassword: string): Promise<{ success: boolean }> {
+    try {
+      // Kiểm tra xem người dùng có tồn tại trong cơ sở dữ liệu không
+      const { data, error } = await this.supabase
+        .from('users')
+        .select('pass')
+        .eq('email', email)
+        .single();
+
+      if (error || !data) {
+        throw new NotFoundException('Người dùng không tồn tại');
+      }
+
+      // So sánh mật khẩu cũ với mật khẩu hiện tại trong cơ sở dữ liệu
+      const isOldPasswordValid = await bcrypt.compare(oldPassword, data.pass);
+      if (!isOldPasswordValid) {
+        throw new BadRequestException('Mật khẩu cũ không đúng');
+      }
+
+      // Mã hóa mật khẩu mới
+      const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+      // Cập nhật mật khẩu mới trong cơ sở dữ liệu
+      const { error: updateError } = await this.supabase
+        .from('users')
+        .update({ pass: hashedNewPassword })
+        .eq('email', email);
+
+      if (updateError) {
+        throw new BadRequestException('Có lỗi xảy ra khi thay đổi mật khẩu');
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error changing password:', error);
+      throw error;
+    }
   }
 
   async getUserRating(userId: number, movieId: number): Promise<number | null> {

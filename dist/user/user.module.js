@@ -23,7 +23,7 @@ let UserModule = class UserModule {
     configure(consumer) {
         consumer
             .apply(jwt_middleware_1.JwtMiddleware)
-            .forRoutes('user/rate/:movieId', 'user/watchlist', 'user/favourite', 'user/profile', 'user/recommendations', 'recommendation/vector', 'user/rating/list');
+            .forRoutes('user/rate/:movieId', 'user/watchlist', 'user/favourite', 'user/profile', 'user/recommendations', 'recommendation/vector', 'user/rating/list', 'user/changePassword', 'user/updateAvatar');
     }
 };
 exports.UserModule = UserModule;
@@ -32,7 +32,7 @@ exports.UserModule = UserModule = __decorate([
         imports: [
             jwt_1.JwtModule.register({
                 secret: process.env.JWT_SECRET || 'SECRET_KEY',
-                signOptions: { expiresIn: '5h' },
+                signOptions: { expiresIn: '1h' },
             }),
             mongoose_1.MongooseModule.forFeature([{ name: movie_schema_1.Movie.name, schema: movie_schema_1.MovieSchema }], 'movie1Connection'),
             mongoose_1.MongooseModule.forFeature([{ name: similar_schema_1.Similar.name, schema: similar_schema_1.SimilarSchema }], 'similarConnection'),

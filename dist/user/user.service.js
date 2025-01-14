@@ -171,10 +171,12 @@ let UserService = class UserService {
                 console.error('Error finding user:', error || 'User not found');
                 throw new common_1.NotFoundException('Không tìm thấy người dùng.');
             }
+            console.log('Found user:', data);
             return {
                 email: data.email,
                 username: data.username,
                 isGoogleAccount: isGoogleAccount,
+                image: data.image
             };
         }
         catch (error) {
@@ -217,7 +219,7 @@ let UserService = class UserService {
                 user = data;
             }
             const signpayload = { email, isGoogleAccount: true };
-            const accessToken = this.jwtService.sign(signpayload, { expiresIn: '15m' });
+            const accessToken = this.jwtService.sign(signpayload, { expiresIn: '1h' });
             const refreshToken = this.jwtService.sign(signpayload, { expiresIn: '7d' });
             return {
                 accessToken,
@@ -298,6 +300,52 @@ let UserService = class UserService {
             return false;
         }
         return true;
+    }
+    async updateAvatar(email, imageUrl) {
+        try {
+            const { error } = await this.supabase
+                .from('users')
+                .update({ image: imageUrl })
+                .eq('email', email);
+            if (error) {
+                console.error('Error updating avatar:', error);
+                throw new common_1.BadRequestException('Có lỗi xảy ra khi cập nhật avatar.');
+            }
+            return { success: true };
+        }
+        catch (error) {
+            console.error('Unexpected error updating avatar:', error);
+            throw new common_1.BadRequestException('Đã xảy ra lỗi không mong muốn khi cập nhật avatar.');
+        }
+    }
+    async changePassword(email, oldPassword, newPassword) {
+        try {
+            const { data, error } = await this.supabase
+                .from('users')
+                .select('pass')
+                .eq('email', email)
+                .single();
+            if (error || !data) {
+                throw new common_1.NotFoundException('Người dùng không tồn tại');
+            }
+            const isOldPasswordValid = await bcrypt.compare(oldPassword, data.pass);
+            if (!isOldPasswordValid) {
+                throw new common_1.BadRequestException('Mật khẩu cũ không đúng');
+            }
+            const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+            const { error: updateError } = await this.supabase
+                .from('users')
+                .update({ pass: hashedNewPassword })
+                .eq('email', email);
+            if (updateError) {
+                throw new common_1.BadRequestException('Có lỗi xảy ra khi thay đổi mật khẩu');
+            }
+            return { success: true };
+        }
+        catch (error) {
+            console.error('Error changing password:', error);
+            throw error;
+        }
     }
     async getUserRating(userId, movieId) {
         const { data: existingRating, error } = await this.supabase
