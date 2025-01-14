@@ -502,11 +502,15 @@ let UserService = class UserService {
     }
     async getRecommendations(email) {
         const watchlistMovies = await this.getAllWatchList(email);
-        if (!watchlistMovies.length) {
+        const favouriteList = await this.getAllFavouriteList(email);
+        const combinedMovies = [
+            ...new Map([...watchlistMovies, ...favouriteList].map((movie) => [movie.tmdb_id, movie])).values(),
+        ];
+        if (!combinedMovies.length) {
             throw new common_1.NotFoundException('Watchlist trống, không thể tạo recommendation.');
         }
         const recommendations = [];
-        for (const movie of watchlistMovies) {
+        for (const movie of combinedMovies) {
             const similarData = await this.similarModel.findOne({ tmdb_id: movie.tmdb_id }).exec();
             if (similarData && similarData.similar_movies) {
                 recommendations.push(...similarData.similar_movies);
