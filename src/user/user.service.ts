@@ -105,13 +105,23 @@ export class UserService {
     }
 
     // Kiểm tra nếu email đã tồn tại trong cơ sở dữ liệu
-    const { data, error } = await this.supabase
+    let { data, error } = await this.supabase
       .from('users')
       .select('*')
       .eq('email', email)
       .single();
 
     if (data) {
+      throw new ConflictException('Email đã tồn tại.');
+    }
+
+    let { data: user, error: fetchError } = await this.supabase
+      .from('usersgg')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (user) {
       throw new ConflictException('Email đã tồn tại.');
     }
 
@@ -230,6 +240,17 @@ export class UserService {
       }
 
       const { email, name, sub: googleId } = payload;
+
+      // Kiểm tra nếu email đã tồn tại trong cơ sở dữ liệu
+      let { data, error } = await this.supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
+
+      if (data) {
+        throw new ConflictException('Email này đã có tài khoản trong hệ thống.');
+      }
 
       // Kiểm tra xem người dùng đã tồn tại chưa
       let { data: user, error: fetchError } = await this.supabase
